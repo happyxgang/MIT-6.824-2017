@@ -1,9 +1,45 @@
 package mapreduce
 
 import (
+	//	"fmt"
+	"encoding/json"
 	"hash/fnv"
+	"io/ioutil"
+	"os"
 )
 
+func checkerr(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+type FileInfo struct{
+	file  *os.File
+}
+type FileManager struct{
+	manager map[string]FileInfo
+	fileNameFunc func(key string) string
+}
+func (m *FileManager)SetNameFunc(nameFunc func(key string) string){
+	m.fileNameFunc = nameFunc
+}
+func (m *FileManager)Write(kv KeyValue){
+	fname := m.fileNameFunc(kv.Key)
+	if _,valid:= m.manager[fname]; !valid {
+		file,_:= os.Create(fname)
+		fileinfo := FileInfo{file}
+		m.manager[fname] = fileinfo
+	}else{
+	}
+	fileinfo := m.manager[fname]
+	encoder := json.NewEncoder(fileinfo.file)
+	encoder.Encode(kv)
+}
+func (m FileManager)Close(){
+	for _,v := range m.manager{
+		v.file.Close()
+	}
+}
 // doMap manages one map task: it reads one of the input files
 // (inFile), calls the user-defined map function (mapF) for that file's
 // contents, and partitions the output into nReduce intermediate files.
@@ -27,6 +63,7 @@ func doMap(
 	// mapF() is the map function provided by the application. The first
 	// argument should be the input file name, though the map function
 	// typically ignores it. The second argument should be the entire
+
 	// input file contents. mapF() returns a slice containing the
 	// key/value pairs for reduce; see common.go for the definition of
 	// KeyValue.
@@ -53,6 +90,19 @@ func doMap(
 	//
 	// Remember to close the file after you have written all the values!
 	//
+	var manager FileManager = FileManager{manager:make(map[string]FileInfo)}
+	manager.SetNameFunc(func(key string) string{
+		var r int = ihash(key) % nReduce
+		f := reduceName(jobName, mapTaskNumber, r)
+		return f
+	})
+	dat, err := ioutil.ReadFile(inFile)
+	checkerr(err)
+	mapresult := mapF(inFile, string(dat))
+	for _, kv := range mapresult {
+		manager.Write(kv)
+	}
+	manager.Close()
 }
 
 func ihash(s string) int {
@@ -60,3 +110,4 @@ func ihash(s string) int {
 	h.Write([]byte(s))
 	return int(h.Sum32() & 0x7fffffff)
 }
+
