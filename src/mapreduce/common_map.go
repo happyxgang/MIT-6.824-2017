@@ -1,7 +1,6 @@
 package mapreduce
 
 import (
-	//	"fmt"
 	"encoding/json"
 	"hash/fnv"
 	"io/ioutil"
