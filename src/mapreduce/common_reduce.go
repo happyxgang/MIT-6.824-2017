@@ -2,7 +2,7 @@ package mapreduce
 
 import (
 	"os"
-	"fmt"
+	//"fmt"
 	//"io/ioutil"
 	"encoding/json"
 )
@@ -52,7 +52,7 @@ func doReduce(
 		var kvs map[string][]string = make(map[string][]string)
 		for i:=0; i < nMap; i++ {
 			fname := reduceName(jobName, i, reduceTaskNumber)
-			fmt.Println("Reduce FileName,:", fname)
+			//fmt.Println("Reduce FileName,:", fname)
 			file, err := os.Open(fname)
 			checkerr(err)
 			dec := json.NewDecoder(file)
@@ -62,13 +62,15 @@ func doReduce(
 				if err != nil {
 					break
 				}
-				append(kvs[kv.Key], kv.Value)
+				kvs[kv.Key] = append(kvs[kv.Key], kv.Value)
 			}
 		}
-		file, err :=os.Open("putFile")
+		mergefile := mergeName(jobName, reduceTaskNumber)
+		file, err :=os.Create(mergefile)
+		checkerr(err)
 		enc := json.NewEncoder(file	)
-		for key,v := kvs {
-			enc.Encode(KeyValue{key, reduceF(key, v))	
+		for key,v := range kvs {
+			enc.Encode(KeyValue{key, reduceF(key, v)})
 		}
-		file.close()
+		file.Close()
 }
