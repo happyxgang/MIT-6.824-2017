@@ -66,6 +66,7 @@ func doReduce(
 			}
 		}
 		mergefile := mergeName(jobName, reduceTaskNumber)
+		//fmt.Println("Merge Name:", mergefile)
 		file, err :=os.Create(mergefile)
 		checkerr(err)
 		enc := json.NewEncoder(file	)

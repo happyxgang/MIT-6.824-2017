@@ -1,6 +1,7 @@
 package mapreduce
 
 import (
+	//"fmt"
 	"encoding/json"
 	"hash/fnv"
 	"io/ioutil"
@@ -89,6 +90,7 @@ func doMap(
 	//
 	// Remember to close the file after you have written all the values!
 	//
+///	fmt.Println("Map File", inFile)
 	var manager FileManager = FileManager{manager:make(map[string]FileInfo)}
 	manager.SetNameFunc(func(key string) string{
 		var r int = ihash(key) % nReduce
