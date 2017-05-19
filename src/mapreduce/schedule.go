@@ -35,7 +35,7 @@ func (jobMng *JobManager)GetJob()(job *JobInfo,allDone bool){
   return nil, allDone
 }
 func (jobMng *JobManager)SetStart(file string, worker string){
-  jobMng.jobInfo[file].worker = file
+  jobMng.jobInfo[file].worker =  worker
   jobMng.jobInfo[file].status = 1
 }
 func (jobMng *JobManager)SetFinished(file string, worker string){
@@ -44,6 +44,7 @@ func (jobMng *JobManager)SetFinished(file string, worker string){
   //}
 }
 func (jobMng *JobManager)ResetJob(file string, worker string){
+	fmt.Printf("Reset record worker:%s, now :%s\n",jobMng.jobInfo[file].worker, worker)
   if jobMng.jobInfo[file].worker == worker {
     jobMng.jobInfo[file].status = 0
   }
@@ -175,8 +176,8 @@ finish:
     for{
       select{
         case jobInfo := <-scheduleChan:
-					//fmt.Printf("Get JobInfo, file:%s, worker:%s, status:%d\n", jobInfo.file, jobInfo.worker, jobInfo.status)
           if jobInfo.status == 1 {
+						fmt.Printf("Get Failed JobInfo, file:%s, worker:%s, status:%d\n", jobInfo.file, jobInfo.worker, jobInfo.status)
             jobMng.ResetJob(jobInfo.file, jobInfo.worker)
             delete(workerInfo, jobInfo.worker) 
           }else{
