@@ -7,10 +7,10 @@ package raft
 //
 // rf = Make(...)
 //   create a new Raft server.
-// rf.Start(command interface{}) (index, term, isleader)
+// rf.Start(command interface{}) (index, Term, isleader)
 //   start agreement on a new log entry
-// rf.GetState() (term, isLeader)
-//   ask a Raft for its current term, and whether it thinks it is leader
+// rf.GetState() (Term, isLeader)
+//   ask a Raft for its current Term, and whether it thinks it is leader
 // ApplyMsg
 //   each time a new entry is committed to the log, each Raft peer
 //   should send an ApplyMsg to the service (or tester)
@@ -30,7 +30,7 @@ import (
 
 
 const ELECTION_BASE = 500
-const ELECTION_RANGE = 500
+const ELECTION_RANGE = 250
 
 const(
 	ROLE_FOLLOWER = iota
@@ -147,20 +147,22 @@ func (rf *Raft)VoteFor(id int){
 //
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
-		term int
-		candidateId int
-		lastLogIndex int
-		lastLogTerm int
+		Term         int
+		CandidateId  int
+		LastLogIndex int
+		LastLogTerm  int
 }
-
+func (req RequestVoteArgs) String()string{
+	return fmt.Sprintf("Term:%d, Candidate:%d, logIndex:%d,logTerm:%d", req.Term, req.CandidateId,req.LastLogIndex, req.LastLogTerm)
+}
 //
 // example RequestVote RPC reply structure.
 // field names must start with capital letters!
 //
 type RequestVoteReply struct {
 	// Your data here (2A).
-		term int
-		voteGranted bool
+		Term        int
+		VoteGranted bool
 }
 
 //
@@ -168,15 +170,19 @@ type RequestVoteReply struct {
 //
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
-	fmt.Printf("Get RequestVote Arg:%v\n", args)
-	reply.term = rf.currentTerm
-	if args.term < rf.currentTerm {
-		reply.voteGranted = false
-	}else if (rf.voteFor == -1 || rf.voteFor == args.candidateId) && (rf.GetLastLogTerm() == args.lastLogTerm && rf.GetLastLogIndex() <= args.lastLogIndex) {
-		reply.voteGranted = true
-		rf.VoteFor(args.candidateId)
+	fmt.Printf("Raft:%d, Get RequestVote Arg:%v\n", rf.me, args)
+	reply.Term = rf.currentTerm
+	if args.Term < rf.currentTerm {
+		fmt.Printf("Raft:%d, Grant Failed, raft term:%d, arg term%:d\n", rf.currentTerm, args.Term)
+		reply.VoteGranted = false
+	}else if (rf.voteFor == -1 || rf.voteFor == args.CandidateId) && (rf.GetLastLogTerm() == args.LastLogTerm && rf.GetLastLogIndex() <= args.LastLogIndex) {
+		fmt.Printf("Raft:%d, Grant To Raft:%d, term:%d\n", rf.me, args.CandidateId, args.Term)
+		rf.currentTerm = args.Term
+		reply.VoteGranted = true
+		rf.VoteFor(args.CandidateId)
 	}else{
-		reply.voteGranted = false
+		fmt.Printf("Raft:%d, Grant Failed\n")
+		reply.VoteGranted = false
 	}
 }
 
@@ -220,7 +226,11 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 	return ok
 }
 
-
+func (rf *Raft)ResetElectionTimeOut(){
+	fmt.Printf("Rf:%d, time before:%v\n", rf.me, rf.electionTimeOutMs)
+	rf.electionTimeOutMs = time.Millisecond*(time.Duration((rand.Int31n(ELECTION_RANGE) + ELECTION_BASE)))
+	fmt.Printf("Rf:%d, time after :%v\n", rf.me, rf.electionTimeOutMs)
+}
 //
 // the service using Raft (e.g. a k/v server) wants to start
 // agreement on the next command to be appended to Raft's log. if this
@@ -231,7 +241,7 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 //
 // the first return value is the index that the command will appear at
 // if it's ever committed. the second return value is the current
-// term. the third return value is true if this server believes it is
+// Term. the third return value is true if this server believes it is
 // the leader.
 //
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
@@ -286,13 +296,13 @@ func NewElection(raft *Raft, term int){
 		lastLogTerm := raft.GetLastLogTerm()
 
 		go func(p *labrpc.ClientEnd, index int){
-			fmt.Printf("Start To Call for Vote Peer:%d\n", index)
+			fmt.Printf("Raft:%d:Start To Call for Vote Peer:%d\n",raft.me, index)
 			req := RequestVoteArgs{term, candidateId, lastLogIndex, lastLogTerm}
 			reply := RequestVoteReply{}
 			suc := raft.sendRequestVote(index, &req, &reply)
 			fmt.Printf("Request Vote Rpc Ret:%v,req:%v reply:%v\n", suc, req, reply)
 			if suc {
-				if reply.term == term  && reply.voteGranted {
+				if reply.Term == term  && reply.VoteGranted {
 					electChan  <- true
 				}
 			}else{
@@ -333,14 +343,16 @@ func StartElection(raft *Raft){
 func HandleElectionTime(raft *Raft){
 	for {
 		// Just Started Server, Folloer State, Start Election TimeOut
+		gap:=time.Millisecond*10
+		tick := time.Tick(gap)
 		select {
-		case <- time.After(time.Millisecond*10):
-				raft.electionTimeOutMs -= time.Millisecond*10
+		case <- tick:
+				raft.electionTimeOutMs -= gap
 				// timeout for selection
-				if raft.electionTimeOutMs <= time.Millisecond{
+				if raft.electionTimeOutMs <= gap{
 					//ChangeToCandidate(raft)
 					raft.ChangeToCandidate()
-					raft.electionTimeOutMs = time.Millisecond*(time.Duration((rand.Int31n(ELECTION_RANGE) + ELECTION_BASE)))
+					raft.ResetElectionTimeOut()
 					StartElection(raft)
 				}
 		}
@@ -355,6 +367,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.voteFor = -1
 	rf.currentTerm = -1
 	rf.role = ROLE_FOLLOWER
+	rf.ResetElectionTimeOut()
 	// Your initialization code here (2A, 2B, 2C).
 	go HandleElectionTime(rf)
 	// initialize from state persisted before a crash
