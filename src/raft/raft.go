@@ -77,10 +77,9 @@ type Raft struct {
 // believes it is the leader.
 func (rf *Raft) GetState() (int, bool) {
 
-	var term int
-	var isleader bool
+
 	// Your code here (2A).
-	return term, isleader
+	return rf.currentTerm, rf.voteFor == rf.me
 }
 
 func (rf *Raft)GetLastLogIndex()int{
@@ -137,6 +136,7 @@ func (rf *Raft)VoteFor(id int){
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	rf.voteFor = id
+	rf.ResetElectionTimeOut()
 }
 
 
@@ -152,6 +152,7 @@ type RequestVoteArgs struct {
 		LastLogIndex int
 		LastLogTerm  int
 }
+
 func (req RequestVoteArgs) String()string{
 	return fmt.Sprintf("Term:%d, Candidate:%d, logIndex:%d,logTerm:%d", req.Term, req.CandidateId,req.LastLogIndex, req.LastLogTerm)
 }
@@ -171,7 +172,7 @@ type RequestVoteReply struct {
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 	fmt.Printf("Raft:%d, Get RequestVote Arg:%v\n", rf.me, args)
-	reply.Term = rf.currentTerm
+
 	if args.Term < rf.currentTerm {
 		fmt.Printf("Raft:%d, Grant Failed, raft term:%d, arg term%:d\n", rf.currentTerm, args.Term)
 		reply.VoteGranted = false
@@ -179,18 +180,47 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		fmt.Printf("Raft:%d, Grant To Raft:%d, term:%d\n", rf.me, args.CandidateId, args.Term)
 		rf.currentTerm = args.Term
 		reply.VoteGranted = true
+
 		rf.VoteFor(args.CandidateId)
+		rf.ChangeToFollower()
+		//rf.ResetElectionTimeOut()
 	}else{
 		fmt.Printf("Raft:%d, Grant Failed\n")
 		reply.VoteGranted = false
 	}
+	reply.Term=rf.currentTerm
 }
-
-func (rf *Raft) RequestAppendLog(args *RequestVoteArgs, reply *RequestVoteReply) {
-	
+type RequestAppendLog struct{
+	Term int
+	LeaderId int
+	PrevLogIndex int
+	PrevLogTerm int
+	//Entries []LogInfo
+	LeaderCommit int
+}
+type RequestAppendLogReply struct{
+	Term int
+	Success bool
+}
+func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLogReply) {
+	fmt.Printf("AppendLog,Sender %d, Receier:%d leader:%d\n", args.LeaderId, rf.me,rf.voteFor)
+	if args.Term >= rf.currentTerm && args.LeaderId == rf.voteFor  {
+		rf.ResetElectionTimeOut()
+		reply.Term = args.Term
+		reply.Success = true
+		rf.currentTerm = args.Term
+		rf.ResetElectionTimeOut()
+	}else{
+		reply.Term = rf.currentTerm
+		reply.Success = false
+	}
+	return
 }
 func (rf *Raft) ChangeToCandidate(){
 	rf.role = ROLE_CANDIDATE	
+}
+func (rf *Raft)IsLeader()bool{
+	return rf.role == ROLE_LEADER
 }
 //
 // example code to send a RequestVote RPC to a server.
@@ -227,9 +257,8 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 }
 
 func (rf *Raft)ResetElectionTimeOut(){
-	fmt.Printf("Rf:%d, time before:%v\n", rf.me, rf.electionTimeOutMs)
 	rf.electionTimeOutMs = time.Millisecond*(time.Duration((rand.Int31n(ELECTION_RANGE) + ELECTION_BASE)))
-	fmt.Printf("Rf:%d, time after :%v\n", rf.me, rf.electionTimeOutMs)
+	//fmt.Printf("Rf:%d, time after :%v\n", rf.me, rf.electionTimeOutMs)
 }
 //
 // the service using Raft (e.g. a k/v server) wants to start
@@ -267,11 +296,43 @@ func (rf *Raft) Kill() {
 func (rf *Raft) SelectFailed() {
 	// Your code here, if desired.
 }
+func SayHello (rf *Raft, p *labrpc.ClientEnd){
+	//log := make([]LogInfo,1,1)
+	req := RequestAppendLog{rf.currentTerm,rf.me,-1,-1,-1}
+	reply := RequestAppendLogReply{}
+	p.Call("Raft.RequestAppendLog",&req,  &reply)
+}
+func HeartBeatGoroutine(rf *Raft){
+	for{
+		tick := time.Tick(100*time.Millisecond)
+		select {
+		case <-tick:
+			for i, p := range rf.peers {
+				if i != rf.me {
+					go SayHello(rf, p)
+				}
 
+			}
+		}
+	}
+}
 func (rf *Raft) IamNewLeader() {
 	// Your code here, if desired.
+	//rf.ResetElectionTimeOut()
+	rf.ChangeToLeader()
+	go HeartBeatGoroutine(rf)
 }
-
+func (rf *Raft)ChangeToLeader(){
+	fmt.Printf("Raft:%d Is Leader Now!\n", rf.me)
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	rf.role = ROLE_LEADER
+}
+func (rf *Raft)ChangeToFollower(){
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	rf.role = ROLE_FOLLOWER
+}
 //
 // the service or tester wants to create a Raft server. the ports
 // of all the Raft servers (including this one) are in peers[]. this
@@ -347,6 +408,9 @@ func HandleElectionTime(raft *Raft){
 		tick := time.Tick(gap)
 		select {
 		case <- tick:
+				if raft.IsLeader() {
+					continue
+				}
 				raft.electionTimeOutMs -= gap
 				// timeout for selection
 				if raft.electionTimeOutMs <= gap{
