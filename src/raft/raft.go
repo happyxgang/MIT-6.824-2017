@@ -208,11 +208,11 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 					if commitNum > len(rf.peers)/2 {
 						if rf.commitIndex < logIndex {
 							if rf.IsLeader(){
-								fmt.Printf("Commit Log\n", logIndex)
+								fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n",rf.me, logIndex,cmd)
 								rf.commitIndex=logIndex
 								msg := ApplyMsg{}
 								msg.Command = cmd
-								msg.Index = logIndex
+								msg.Index = logIndex+1
 								rf.applyCh <- msg
 							}else{
 								err:=fmt.Sprintf("rf:%d, not Leader\n", rf.me)
@@ -227,6 +227,7 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 			}
 		}
 	}()
+	fmt.Printf("Raft:%d, Start Index:%d, Term:%d\n", rf.me, logIndex, logTerm)
 	return logIndex,logTerm
 }
 
@@ -303,7 +304,7 @@ func (rf *Raft)ContainLog(index int, term int) bool{
 		return true
 	}
 
-	if len(rf.log)-1 <= index{
+	if len(rf.log)-1 < index{
 		return false
 	}
 	return rf.log[index].Term == term
@@ -320,12 +321,15 @@ func (rf *Raft)ElimitConflict(index int){
 }
 func (rf *Raft)AddLog(index int, term int, log LogInfo){
 	if rf.ConflictLog(index, term) {
+		fmt.Printf("Raft:%d,Have Conflict,index:%d, term:%d,value:%v\n",rf.me, index, term, log)
 		rf.ElimitConflict(index)
 		rf.AddLog(index, term, log)
 	}
 	if len(rf.log)-1 >=index{
+		fmt.Printf("Raft:%d Add Log ByIndex:%d,value:%v\n",rf.me, index, log)
 		rf.log[index] = log
 	}else{
+		fmt.Printf("Raft:%d Add Log By Append,value:%v\n",rf.me,log)
 		rf.log=append(rf.log,log)
 	}
 }
@@ -340,7 +344,7 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 	if args.Term >= rf.currentTerm && args.LeaderId == rf.voteFor  {
 		if(rf.ContainLog(args.PrevLogIndex, args.PrevLogTerm)){
 			fmt.Printf("Contain Log prevIndex:%d, term:%d\n", args.PrevLogIndex,args.PrevLogTerm)
-			rf.ResetElectionTimeOut()
+
 			reply.Term = args.Term
 			reply.Success = true
 			rf.currentTerm = args.Term
@@ -353,7 +357,12 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 				rf.AddLog(logIndex, logTerm, args.AppendLog[index])
 			}
 			if args.LeaderCommit > rf.commitIndex {
+				oldCommitIndex := rf.commitIndex
 				rf.commitIndex = min(args.LeaderCommit, rf.GetLastLogIndex())
+				for i :=1; i <= rf.commitIndex - oldCommitIndex;i++{
+					msg:=ApplyMsg{oldCommitIndex+i+1,rf.log[oldCommitIndex+i].Value,false,[]byte{}}
+					rf.applyCh <- msg
+				}
 			}
 		}else {
 			fmt.Printf("Not Log prevIndex:%d, term:%d\n", args.PrevLogIndex,args.PrevLogTerm)
@@ -368,7 +377,7 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 		reply.Term = rf.currentTerm
 		reply.Success = false
 	}
-	fmt.Printf("AppendLogResult:%v\n",reply)
+	fmt.Printf("AppendLogResult:%v, Raft:%d, CommitIndex:%d\n",reply,rf.me, rf.commitIndex)
 	return
 }
 func (rf *Raft) ChangeToCandidate(){
@@ -491,9 +500,9 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 
 	// Your code here (2B).
 	if (isLeader){
-		term, index = rf.CommitLog(command)
+		index, term = rf.CommitLog(command)
 	}
-	return index, term, isLeader
+	return index+1, term, isLeader
 }
 
 //
@@ -600,12 +609,12 @@ func NewElection(raft *Raft, term int){
 			rspNum += 1
 			if( result){
 				grantedNum += 1
-				if grantedNum > len(raft.peers)/2 {
-					raft.IamNewLeader()
-				}
+
 			}
 			if rspNum == len(raft.peers)-1 {
-				if grantedNum <= len(raft.peers)/2 {
+				if grantedNum > len(raft.peers)/2 {
+					raft.IamNewLeader()
+				}else if grantedNum <= len(raft.peers)/2 {
 					raft.SelectFailed()
 				}
 				break ElectResult
@@ -666,6 +675,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.ResetElectionTimeOut()
 	rf.applyCh = applyCh
 	rf.commitReplyCh = make(chan ApplyMsg)
+	rf.commitIndex = -1
 	// Your initialization code here (2A, 2B, 2C).
 	go HandleElectionTime(rf)
 	go SendApplyMsg(rf)
