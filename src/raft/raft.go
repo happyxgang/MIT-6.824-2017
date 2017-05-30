@@ -23,6 +23,7 @@ import (
 	"time"
 	"fmt"
 	"math/rand"
+
 )
 
 // import "bytes"
@@ -49,8 +50,8 @@ type ApplyMsg struct {
 	Snapshot    []byte // ignore for lab2; only used in lab3
 }
 type LogInfo struct{
-	value interface{}
-	term int
+	Value interface{}
+	Term int
 }
 //
 // A Go object implementing a single Raft peer.
@@ -71,25 +72,29 @@ type Raft struct {
 	matchIndex []int
 	role int
 	log []LogInfo
+	applyCh chan ApplyMsg
+	commitReplyCh chan ApplyMsg
+	commitIndex int
 }
-
+func (rf *Raft)String()string{
+	return fmt.Sprintf("RaftState:currentTerm:%d, voteFor:%d,Role:%d,commitIndex:%d\n",
+	rf.currentTerm, rf.voteFor, rf.role, rf.commitIndex)
+}
 // return currentTerm and whether this server
 // believes it is the leader.
 func (rf *Raft) GetState() (int, bool) {
-
-
 	// Your code here (2A).
-	return rf.currentTerm, rf.voteFor == rf.me
+	return rf.currentTerm,  rf.role==ROLE_LEADER
 }
 
 func (rf *Raft)GetLastLogIndex()int{
-	return len(rf.log)
+	return len(rf.log)-1
 }
 
 func (rf *Raft)GetLastLogTerm()int{
 	if len(rf.log) > 0{
 
-		return rf.log[len(rf.log)-1].term
+		return rf.log[len(rf.log)-1].Term
 	}else{
 		return -1
 	}
@@ -139,7 +144,91 @@ func (rf *Raft)VoteFor(id int){
 	rf.ResetElectionTimeOut()
 }
 
+func (rf *Raft)GetLastLog()*LogInfo{
+	return rf.GetLastIndexLog(0)
+}
+func (rf *Raft)GetLastIndexLog(count int) *LogInfo{
+	index := len(rf.log)-1 + count
+	if index >= 0 {
+		return &rf.log[index]
+	}
+	return nil
+}
 
+func (rf* Raft)AddLocalLog(cmd interface{}){
+	rf.log = append(rf.log, LogInfo{cmd, rf.currentTerm})
+}
+func (rf* Raft)GetCommitIndex()int{
+	return rf.commitIndex
+}
+func (rf* Raft)SendAppendLogRpc(i int, req *RequestAppendLog, rsp *RequestAppendLogReply) bool {
+	ok := rf.peers[i].Call("Raft.RequestAppendLog",req, rsp)
+	return ok
+}
+func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
+	preLogIndex :=rf.GetLastLogIndex()
+	prefLogTerm :=rf.GetLastLogTerm()
+
+	rf.AddLocalLog(cmd)
+	rspCh := make(chan bool)
+	logIndex:=rf.GetLastLogIndex()
+	logTerm:=rf.GetLastLogTerm()
+	lastlog := rf.GetLastLog()
+	appendLog :=[]LogInfo{*lastlog}
+	go func(){
+		req := RequestAppendLog{rf.currentTerm,rf.me,preLogIndex,prefLogTerm,rf.GetCommitIndex(), 1,appendLog}
+		reply := RequestAppendLogReply{}
+		for i, _ := range rf.peers {
+			if i == rf.me {
+				continue
+			}
+			go func(index int){
+			 	ok :=rf.SendAppendLogRpc(index,&req, &reply)
+				fmt.Printf("Append Rsp:index:%d me:%d, other:%d, ok:%v\n",logIndex, rf.me, index, ok)
+				if ok && reply.Success {
+					rspCh <- true
+				}else{
+					rspCh <- false
+				}
+			}(i)
+		}
+		replyNum := 1
+		commitNum :=1
+		End:
+		for{
+			select {
+			case result :=<- rspCh:
+				replyNum += 1
+				if result {
+					commitNum +=1
+				}
+				if replyNum == len(rf.peers){
+					fmt.Printf("All Rsp Received, raft:%d, isLeader:%v,CommitNum:%d, commit index;%d, new index:%d\n",
+						rf.me, rf.IsLeader(), commitNum, rf.commitIndex, logIndex)
+					if commitNum > len(rf.peers)/2 {
+						if rf.commitIndex < logIndex {
+							if rf.IsLeader(){
+								fmt.Printf("Commit Log\n", logIndex)
+								rf.commitIndex=logIndex
+								msg := ApplyMsg{}
+								msg.Command = cmd
+								msg.Index = logIndex
+								rf.applyCh <- msg
+							}else{
+								err:=fmt.Sprintf("rf:%d, not Leader\n", rf.me)
+								panic(err)
+							}
+						} else{
+							panic("CommitIndex roll back?!")
+						}
+					}
+					break End
+				}
+			}
+		}
+	}()
+	return logIndex,logTerm
+}
 
 //
 // example RequestVote RPC arguments structure.
@@ -156,6 +245,7 @@ type RequestVoteArgs struct {
 func (req RequestVoteArgs) String()string{
 	return fmt.Sprintf("Term:%d, Candidate:%d, logIndex:%d,logTerm:%d", req.Term, req.CandidateId,req.LastLogIndex, req.LastLogTerm)
 }
+
 //
 // example RequestVote RPC reply structure.
 // field names must start with capital letters!
@@ -172,20 +262,20 @@ type RequestVoteReply struct {
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 	fmt.Printf("Raft:%d, Get RequestVote Arg:%v\n", rf.me, args)
-
+	fmt.Printf("Raft:%d, ReqVoteArg Candidate:%d, term:%d,log index:%d, logterm:%d\n", rf.me, args.CandidateId, args.Term,args.LastLogIndex, args.LastLogTerm)
+	fmt.Printf("me:%d, voteFor:%d, Term:%d, log index:%d, log term:%d\n", rf.me, rf.voteFor, rf.currentTerm, rf.GetLastLogIndex(), rf.GetLastLogTerm())
 	if args.Term < rf.currentTerm {
-		fmt.Printf("Raft:%d, Grant Failed, raft term:%d, arg term%:d\n", rf.currentTerm, args.Term)
+		fmt.Printf("Raft:%d, Grant Failed, raft term:%d, arg term%:d\n",rf.me, rf.currentTerm, args.Term)
 		reply.VoteGranted = false
 	}else if (rf.voteFor == -1 || rf.voteFor == args.CandidateId) && (rf.GetLastLogTerm() == args.LastLogTerm && rf.GetLastLogIndex() <= args.LastLogIndex) {
-		fmt.Printf("Raft:%d, Grant To Raft:%d, term:%d\n", rf.me, args.CandidateId, args.Term)
 		rf.currentTerm = args.Term
 		reply.VoteGranted = true
-
 		rf.VoteFor(args.CandidateId)
 		rf.ChangeToFollower()
+		fmt.Printf("Raft :%d, Grant To:%d\n", rf.me, args.CandidateId)
 		//rf.ResetElectionTimeOut()
 	}else{
-		fmt.Printf("Raft:%d, Grant Failed\n")
+		fmt.Printf("Raft:%d, Grant Failed\n",rf.me)
 		reply.VoteGranted = false
 	}
 	reply.Term=rf.currentTerm
@@ -197,27 +287,92 @@ type RequestAppendLog struct{
 	PrevLogTerm int
 	//Entries []LogInfo
 	LeaderCommit int
+	LogNum int
+	AppendLog []LogInfo
+}
+func (arg *RequestAppendLog)String()string{
+	return fmt.Sprintf("AppendLogReq Term:%d,Leader:%d,PreIndex:%d,PreTerm:%d,LeaderCommit:%d,LogNum:%d\n",
+	arg.Term,arg.LeaderId,arg.PrevLogIndex,arg.PrevLogTerm,arg.LeaderCommit,arg.LogNum)
 }
 type RequestAppendLogReply struct{
 	Term int
 	Success bool
 }
-func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLogReply) {
-	fmt.Printf("AppendLog,Sender %d, Receier:%d leader:%d\n", args.LeaderId, rf.me,rf.voteFor)
-	if args.Term >= rf.currentTerm && args.LeaderId == rf.voteFor  {
-		rf.ResetElectionTimeOut()
-		reply.Term = args.Term
-		reply.Success = true
-		rf.currentTerm = args.Term
-		rf.ResetElectionTimeOut()
+func (rf *Raft)ContainLog(index int, term int) bool{
+	if index <0 && term<0 {
+		return true
+	}
+
+	if len(rf.log)-1 <= index{
+		return false
+	}
+	return rf.log[index].Term == term
+}
+func (rf *Raft)ConflictLog(index int, term int) bool{
+	if len(rf.log)-1 >= index && rf.log[index].Term != term{
+		return true
+	}
+	return false
+}
+func (rf *Raft)ElimitConflict(index int){
+	endIndex := index
+	rf.log = rf.log[:endIndex]
+}
+func (rf *Raft)AddLog(index int, term int, log LogInfo){
+	if rf.ConflictLog(index, term) {
+		rf.ElimitConflict(index)
+		rf.AddLog(index, term, log)
+	}
+	if len(rf.log)-1 >=index{
+		rf.log[index] = log
 	}else{
+		rf.log=append(rf.log,log)
+	}
+}
+func min (a int, b int)int{
+	if a < b {
+		return a
+	}
+	return b
+}
+func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLogReply) {
+	fmt.Printf("AppendLog,Sender %d, Receier:%d leader:%d,arg:%v\n", args.LeaderId, rf.me,rf.voteFor,args)
+	if args.Term >= rf.currentTerm && args.LeaderId == rf.voteFor  {
+		if(rf.ContainLog(args.PrevLogIndex, args.PrevLogTerm)){
+			fmt.Printf("Contain Log prevIndex:%d, term:%d\n", args.PrevLogIndex,args.PrevLogTerm)
+			rf.ResetElectionTimeOut()
+			reply.Term = args.Term
+			reply.Success = true
+			rf.currentTerm = args.Term
+			// TODO::check when to reset election time
+			rf.ResetElectionTimeOut()
+
+			for index :=0; index < args.LogNum; index++{
+				logIndex := args.PrevLogIndex+1+index
+				logTerm := args.Term
+				rf.AddLog(logIndex, logTerm, args.AppendLog[index])
+			}
+			if args.LeaderCommit > rf.commitIndex {
+				rf.commitIndex = min(args.LeaderCommit, rf.GetLastLogIndex())
+			}
+		}else {
+			fmt.Printf("Not Log prevIndex:%d, term:%d\n", args.PrevLogIndex,args.PrevLogTerm)
+			reply.Success = false
+		}
+	}else{
+
+		if args.Term > rf.currentTerm {
+			rf.ChangeToFollower()
+			rf.currentTerm = args.Term
+		}
 		reply.Term = rf.currentTerm
 		reply.Success = false
 	}
+	fmt.Printf("AppendLogResult:%v\n",reply)
 	return
 }
 func (rf *Raft) ChangeToCandidate(){
-	rf.role = ROLE_CANDIDATE	
+	rf.role = ROLE_CANDIDATE
 }
 func (rf *Raft)IsLeader()bool{
 	return rf.role == ROLE_LEADER
@@ -256,9 +411,65 @@ func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *Reques
 	return ok
 }
 
+func (rf *Raft) SendRpc(server int, method string, args *interface{}, reply *interface{}) bool {
+	ok := rf.peers[server].Call(method, args, reply)
+	return ok
+}
+
+
 func (rf *Raft)ResetElectionTimeOut(){
 	rf.electionTimeOutMs = time.Millisecond*(time.Duration((rand.Int31n(ELECTION_RANGE) + ELECTION_BASE)))
 	//fmt.Printf("Rf:%d, time after :%v\n", rf.me, rf.electionTimeOutMs)
+}
+
+
+
+func (rf *Raft)BroadCastReq(rpc string, req interface{}, replyfuc func(replyarr []interface{})){
+//	electChan := make(chan bool)
+//
+//	for i, p := range raft.peers {
+//		if i == raft.me {
+//			continue
+//		}
+//
+//		go func(p *labrpc.ClientEnd, index int){
+//			fmt.Printf("Raft:%d:Start To Call for Vote Peer:%d\n",raft.me, index)
+//			req := RequestVoteArgs{term, candidateId, lastLogIndex, lastLogTerm}
+//			reply := reflect.Type(replyfuc)
+//			suc := raft.sendRequestVote(index, &req, &reply)
+//			fmt.Printf("Request Vote Rpc Ret:%v,req:%v reply:%v\n", suc, req, reply)
+//			if suc {
+//				if reply.Term == term  && reply.VoteGranted {
+//					electChan  <- true
+//				}else{
+//					electChan <-false
+//				}
+//			}else{
+//				electChan <- false
+//			}
+//		}(p, i)
+//	}
+//	rspNum :=0
+//	grantedNum := 1
+//ElectResult:
+//	for {
+//		select {
+//		case result := <- electChan:
+//			rspNum += 1
+//			if( result){
+//				grantedNum += 1
+//				if grantedNum > len(raft.peers)/2 {
+//					raft.IamNewLeader()
+//				}
+//			}
+//			if rspNum == len(raft.peers)-1 {
+//				if grantedNum <= len(raft.peers)/2 {
+//					raft.SelectFailed()
+//				}
+//				break ElectResult
+//			}
+//		}
+//	}
 }
 //
 // the service using Raft (e.g. a k/v server) wants to start
@@ -276,11 +487,12 @@ func (rf *Raft)ResetElectionTimeOut(){
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	index := -1
 	term := -1
-	isLeader := true
+	isLeader := rf.IsLeader()
 
 	// Your code here (2B).
-
-
+	if (isLeader){
+		term, index = rf.CommitLog(command)
+	}
 	return index, term, isLeader
 }
 
@@ -295,12 +507,18 @@ func (rf *Raft) Kill() {
 }
 func (rf *Raft) SelectFailed() {
 	// Your code here, if desired.
+	fmt.Printf("Raft:%d, Election Term:%d, Failed\n", rf.me, rf.currentTerm)
+	rf.voteFor = -1
 }
 func SayHello (rf *Raft, p *labrpc.ClientEnd){
 	//log := make([]LogInfo,1,1)
-	req := RequestAppendLog{rf.currentTerm,rf.me,-1,-1,-1}
+	req := RequestAppendLog{rf.currentTerm,rf.me,rf.GetLastLogIndex(),rf.GetLastLogTerm(),rf.commitIndex,0,[]LogInfo{}}
 	reply := RequestAppendLogReply{}
 	p.Call("Raft.RequestAppendLog",&req,  &reply)
+	if reply.Term > rf.currentTerm{
+		rf.ChangeToFollower()
+		rf.currentTerm = reply.Term
+	}
 }
 func HeartBeatGoroutine(rf *Raft){
 	for{
@@ -365,6 +583,8 @@ func NewElection(raft *Raft, term int){
 			if suc {
 				if reply.Term == term  && reply.VoteGranted {
 					electChan  <- true
+				}else{
+					electChan <-false
 				}
 			}else{
 					electChan <- false
@@ -394,6 +614,8 @@ func NewElection(raft *Raft, term int){
 	}
 }
 func StartElection(raft *Raft){
+	fmt.Printf("Election Time Out, %d, Start New Election\n", raft.me)
+
 	raft.ChangeToCandidate()
 	nowTerm := raft.IncTerm()
 
@@ -422,6 +644,16 @@ func HandleElectionTime(raft *Raft){
 		}
 	}
 }
+
+
+func SendApplyMsg(rf *Raft){
+	for{
+		select{
+		case msg := <- rf.commitReplyCh:
+			rf.applyCh <- msg
+		}
+	}
+}
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
 	rf := &Raft{}
@@ -432,11 +664,13 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.currentTerm = -1
 	rf.role = ROLE_FOLLOWER
 	rf.ResetElectionTimeOut()
+	rf.applyCh = applyCh
+	rf.commitReplyCh = make(chan ApplyMsg)
 	// Your initialization code here (2A, 2B, 2C).
 	go HandleElectionTime(rf)
+	go SendApplyMsg(rf)
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
-
 
 	return rf
 }

@@ -29,12 +29,12 @@ func TestInitialElection2A(t *testing.T) {
 	// is a leader elected?
 	cfg.checkOneLeader()
 
-	// does the leader+term stay the same if there is no network failure?
+	// does the leader+Term stay the same if there is no network failure?
 	term1 := cfg.checkTerms()
 	time.Sleep(2 * RaftElectionTimeout)
 	term2 := cfg.checkTerms()
 	if term1 != term2 {
-		fmt.Printf("warning: term changed even though there were no failures")
+		fmt.Printf("warning: Term changed even though there were no failures")
 	}
 
 	fmt.Printf("  ... Passed\n")
@@ -46,33 +46,35 @@ func TestReElection2A(t *testing.T) {
 	defer cfg.cleanup()
 
 	fmt.Printf("Test (2A): election after network failure ...\n")
-
 	leader1 := cfg.checkOneLeader()
-
+	fmt.Printf("Leader1:%d\n", leader1)
+	fmt.Println("Pass ReElection2A Phase0")
 	// if the leader disconnects, a new one should be elected.
 	cfg.disconnect(leader1)
 	cfg.checkOneLeader()
-
+	fmt.Println("Pass Relection2A Phase1")
 	// if the old leader rejoins, that shouldn't
 	// disturb the old leader.
 	cfg.connect(leader1)
 	leader2 := cfg.checkOneLeader()
-
+	fmt.Println("Pass Relection2A Phase2")
 	// if there's no quorum, no leader should
 	// be elected.
 	cfg.disconnect(leader2)
 	cfg.disconnect((leader2 + 1) % servers)
 	time.Sleep(2 * RaftElectionTimeout)
+	fmt.Printf("Disconnected :%d %d\n", leader2, (leader2+1)%servers)
 	cfg.checkNoLeader()
 
+	fmt.Println("Pass Relection2A Phase3")
 	// if a quorum arises, it should elect a leader.
 	cfg.connect((leader2 + 1) % servers)
 	cfg.checkOneLeader()
-
+	fmt.Println("Pass Relection2A Phase4")
 	// re-join of last node shouldn't prevent leader from existing.
 	cfg.connect(leader2)
 	cfg.checkOneLeader()
-
+	fmt.Println("Pass Relection2A Phase5")
 	fmt.Printf("  ... Passed\n")
 }
 
@@ -227,7 +229,7 @@ loop:
 
 		for j := 0; j < servers; j++ {
 			if t, _ := cfg.rafts[j].GetState(); t != term {
-				// term changed -- can't expect low RPC counts
+				// Term changed -- can't expect low RPC counts
 				continue loop
 			}
 		}
@@ -277,7 +279,7 @@ loop:
 	}
 
 	if !success {
-		t.Fatalf("term changed too often")
+		t.Fatalf("Term changed too often")
 	}
 
 	fmt.Printf("  ... Passed\n")
@@ -443,7 +445,7 @@ loop:
 				continue loop
 			}
 			if !ok {
-				// No longer the leader, so term has changed
+				// No longer the leader, so Term has changed
 				continue loop
 			}
 			if starti+i != index1 {
@@ -455,7 +457,7 @@ loop:
 			cmd := cfg.wait(starti+i, servers, term)
 			if ix, ok := cmd.(int); ok == false || ix != cmds[i-1] {
 				if ix == -1 {
-					// term changed -- try again
+					// Term changed -- try again
 					continue loop
 				}
 				t.Fatalf("wrong value %v committed for index %v; expected %v\n", cmd, starti+i, cmds)
@@ -466,7 +468,7 @@ loop:
 		total2 = 0
 		for j := 0; j < servers; j++ {
 			if t, _ := cfg.rafts[j].GetState(); t != term {
-				// term changed -- can't expect low RPC counts
+				// Term changed -- can't expect low RPC counts
 				// need to keep going to update total2
 				failed = true
 			}
@@ -486,7 +488,7 @@ loop:
 	}
 
 	if !success {
-		t.Fatalf("term changed too often")
+		t.Fatalf("Term changed too often")
 	}
 
 	time.Sleep(RaftElectionTimeout)
@@ -632,7 +634,7 @@ func TestPersist32C(t *testing.T) {
 // probability (perhaps without committing the command), or crash after a while
 // with low probability (most likey committing the command).  If the number of
 // alive servers isn't enough to form a majority, perhaps start a new server.
-// The leader in a new term may try to finish replicating log entries that
+// The leader in a new Term may try to finish replicating log entries that
 // haven't been committed yet.
 //
 func TestFigure82C(t *testing.T) {
