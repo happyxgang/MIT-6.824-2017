@@ -57,7 +57,11 @@ import "sync"
 import "log"
 import "strings"
 import "math/rand"
-import "time"
+import (
+	"time"
+	//"fmt"
+	"fmt"
+)
 
 type reqMsg struct {
 	endname  interface{} // name of sending ClientEnd
@@ -260,6 +264,7 @@ func (rn *Network) ProcessReq(req reqMsg) {
 			// server in fairly rapid succession.
 			ms = (rand.Int() % 100)
 		}
+		fmt.Printf("Sleep:%d\n",ms)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 		req.replyCh <- replyMsg{false, nil}
 	}
