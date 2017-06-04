@@ -264,7 +264,7 @@ func (rn *Network) ProcessReq(req reqMsg) {
 			// server in fairly rapid succession.
 			ms = (rand.Int() % 100)
 		}
-		fmt.Printf("Sleep:%d\n",ms)
+		fmt.Printf("Raft:%v,Sleep:%d\n",req.endname, ms)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 		req.replyCh <- replyMsg{false, nil}
 	}

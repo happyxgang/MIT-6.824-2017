@@ -113,7 +113,7 @@ func TestFailAgree2B(t *testing.T) {
 	// follower network disconnection
 	leader := cfg.checkOneLeader()
 	cfg.disconnect((leader + 1) % servers)
-	fmt.Println("FailedAgree2B, Phase0")
+	fmt.Printf("FailedAgree2B, Phase0, leader :%d\n", leader)
 	// agree despite one disconnected server?
 	cfg.one(102, servers-1)
 	cfg.one(103, servers-1)
@@ -205,7 +205,7 @@ loop:
 			// leader moved on really quickly
 			continue
 		}
-
+		fmt.Println("TestConcurrentStarts2B, Phase0")
 		iters := 5
 		var wg sync.WaitGroup
 		is := make(chan int, iters)
@@ -213,7 +213,10 @@ loop:
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
+				//cmd := 100+i
 				i, term1, ok := cfg.rafts[leader].Start(100 + i)
+				//fmt.Printf("Leader:%d, Start:%v, index:%d, term:%d, term1:%d, ok:%v\n",
+				//leader,cmd, i,term, term1, ok)
 				if term1 != term {
 					return
 				}
@@ -226,14 +229,14 @@ loop:
 
 		wg.Wait()
 		close(is)
-
+		fmt.Println("TestConcurrentStarts2B, Phase1")
 		for j := 0; j < servers; j++ {
 			if t, _ := cfg.rafts[j].GetState(); t != term {
 				// Term changed -- can't expect low RPC counts
 				continue loop
 			}
 		}
-
+		fmt.Println("TestConcurrentStarts2B, Phase2")
 		failed := false
 		cmds := []int{}
 		for index := range is {
@@ -260,6 +263,7 @@ loop:
 			}()
 			continue
 		}
+		fmt.Println("TestConcurrentStarts2B, Phase3")
 
 		for ii := 0; ii < iters; ii++ {
 			x := 100 + ii
@@ -273,6 +277,7 @@ loop:
 				t.Fatalf("cmd %v missing in %v", x, cmds)
 			}
 		}
+		fmt.Println("TestConcurrentStarts2B, Phase4")
 
 		success = true
 		break
