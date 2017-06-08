@@ -172,6 +172,13 @@ func (rf *Raft)GetPreLogIndex(index int) int{
 	}
 	return 0
 }
+func (rf *Raft)SetCommitIndex( value int){
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	if rf.commitIndex < value{
+		rf.commitIndex = value
+	}
+}
 func (rf *Raft)GetPreLogTerm(index int) int{
 	lastSendLogIndex := rf.nextIndex[index]-1
 	if lastSendLogIndex > len(rf.log){
@@ -202,20 +209,20 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 			if i == rf.me {
 				continue
 			}
-			go func(index int){
-				sendLogs := rf.GetSendLog(index)
-				preLogIndex :=rf.GetPreLogIndex(index)
-				prefLogTerm :=rf.GetPreLogTerm(index)
+			go func(peerid int){
+				sendLogs := rf.GetSendLog(peerid)
+				preLogIndex :=rf.GetPreLogIndex(peerid)
+				prefLogTerm :=rf.GetPreLogTerm(peerid)
 				logNum := len(sendLogs)
 				req := RequestAppendLog{rf.currentTerm,rf.me,preLogIndex,
 					prefLogTerm,rf.GetCommitIndex(), logNum,sendLogs}
 				reply := RequestAppendLogReply{}
-			 	ok :=rf.SendAppendLogRpc(index,&req, &reply)
-				fmt.Printf("Append Rsp:index:%d me:%d, other:%d, rpcok:%v,result:%v\n",logIndex, rf.me, index, ok,reply)
+			 	ok :=rf.SendAppendLogRpc(peerid,&req, &reply)
+				fmt.Printf("Leader:%d, Append Rsp from:%d, logindex:%d, rpcok:%v,result:%v\n",rf.me, peerid,  logIndex, ok,reply)
 				if ok && reply.Success {
-					rspCh <- CommitResult{index,true,preLogIndex, logNum,reply}
+					rspCh <- CommitResult{peerid, true, preLogIndex, logNum, reply}
 				}else{
-					rspCh <- CommitResult{index,false,preLogIndex, logNum,reply}
+					rspCh <- CommitResult{peerid, false, preLogIndex, logNum, reply}
 				}
 			}(i)
 		}
@@ -234,13 +241,13 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 				if ret.result {
 					commitNum +=1
 					rf.nextIndex[ret.peerid] = ret.preLogIndex+ret.logNum+1
-
-					if (commitNum > len(rf.peers)/2 && rf.IsLeader()&&rf.commitIndex < logIndex){
-						logNum := logIndex - rf.commitIndex
+					oldIndex := rf.commitIndex
+					if (commitNum > len(rf.peers)/2 && rf.IsLeader()&&oldIndex < logIndex){
+						logNum := logIndex - oldIndex
 						for i := 1; i <= logNum; i++ {
-							commitIndex := rf.commitIndex+i
+							commitIndex := oldIndex+i
 							fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me, commitIndex, cmd)
-							rf.commitIndex = commitIndex
+							rf.SetCommitIndex(commitIndex)
 							msg := ApplyMsg{}
 							msg.Command = rf.GetLogByIndex(commitIndex).Value
 							msg.Index = commitIndex
@@ -432,8 +439,9 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 			}
 			if args.LeaderCommit > rf.commitIndex {
 				oldCommitIndex := rf.commitIndex
-				rf.commitIndex = min(args.LeaderCommit, rf.GetLastLogIndex())
-				for i :=1; i <= rf.commitIndex - oldCommitIndex;i++{
+				newIndex := min(args.LeaderCommit, rf.GetLastLogIndex())
+				rf.SetCommitIndex(newIndex)
+				for i :=1; i <= newIndex - oldCommitIndex;i++{
 					msg:=ApplyMsg{oldCommitIndex+i,rf.GetLogByIndex(oldCommitIndex+i).Value,false,[]byte{}}
 					fmt.Printf("Raft:%d, ApplyMsg:index:%d, command;%v\n", rf.me, oldCommitIndex+i, rf.GetLogByIndex(oldCommitIndex+i))
 					rf.applyCh <- msg
@@ -758,7 +766,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.ResetElectionTimeOut()
 	rf.applyCh = applyCh
 	rf.commitReplyCh = make(chan ApplyMsg)
-	rf.commitIndex = 0
+	rf.SetCommitIndex(0)
 	rf.nextIndex = make([]int,len(rf.peers))
 
 	// Your initialization code here (2A, 2B, 2C).

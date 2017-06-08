@@ -339,6 +339,7 @@ func TestBackup2B(t *testing.T) {
 
 	// put leader and one follower in a partition
 	leader1 := cfg.checkOneLeader()
+	fmt.Printf("TestBackup2B:Phase0, leader:%d\n", leader1)
 	cfg.disconnect((leader1 + 2) % servers)
 	cfg.disconnect((leader1 + 3) % servers)
 	cfg.disconnect((leader1 + 4) % servers)
@@ -365,12 +366,14 @@ func TestBackup2B(t *testing.T) {
 
 	// now another partitioned leader and one follower
 	leader2 := cfg.checkOneLeader()
+
+
 	other := (leader1 + 2) % servers
 	if leader2 == other {
 		other = (leader2 + 1) % servers
 	}
 	cfg.disconnect(other)
-
+	fmt.Printf("TestBackup2B:Phase1, Leader;%d, other:%d\n", leader2, other)
 	// lots more commands that won't commit
 	for i := 0; i < 50; i++ {
 		cfg.rafts[leader2].Start(rand.Int())
@@ -390,7 +393,7 @@ func TestBackup2B(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		cfg.one(rand.Int(), 3)
 	}
-
+	fmt.Printf("TestBackup2B:Phase2, Leader;%d, other:%d\n", leader2, other)
 	// now everyone
 	for i := 0; i < servers; i++ {
 		cfg.connect(i)
