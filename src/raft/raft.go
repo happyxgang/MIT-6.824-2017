@@ -197,7 +197,6 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 	logTerm := rf.GetLastLogTerm()
 	rspCh := make(chan CommitResult)
 
-
 	go func(){
 		for i, _ := range rf.peers {
 			if i == rf.me {
@@ -237,19 +236,23 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 					rf.nextIndex[ret.peerid] = ret.preLogIndex+ret.logNum+1
 
 					if (commitNum > len(rf.peers)/2 && rf.IsLeader()&&rf.commitIndex < logIndex){
-						fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n",rf.me, logIndex,cmd)
-						rf.commitIndex=logIndex
-						msg := ApplyMsg{}
-						msg.Command = cmd
-						msg.Index = logIndex
-						rf.applyCh <- msg
+						logNum := logIndex - rf.commitIndex
+						for i := 1; i <= logNum; i++ {
+							commitIndex := rf.commitIndex+i
+							fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me, commitIndex, cmd)
+							rf.commitIndex = commitIndex
+							msg := ApplyMsg{}
+							msg.Command = rf.GetLogByIndex(commitIndex).Value
+							msg.Index = commitIndex
+							rf.applyCh <- msg
+						}
 					}
 				}else{
 					if rf.nextIndex[ret.peerid] > 1{
 
 						rf.nextIndex[ret.peerid] -=1
 						fmt.Printf("%v, Raft:%d, Decret Peer :%d, nextIndex;%d\n",
-							time.Now().Unix(),ret.peerid,rf.nextIndex[ret.peerid])
+							time.Now().Unix(),rf.me, ret.peerid,rf.nextIndex[ret.peerid])
 					}
 				}
 				if replyNum == len(rf.peers){
@@ -392,6 +395,7 @@ func (rf *Raft)AddLog(index int, term int, log LogInfo){
 	}
 	if rf.ContainLog(index, term){
 		fmt.Printf("Raft:%d, Alread Contain　Log:Index:%d, term:%d\n", rf.me, index, term)
+		return
 	}
 	if len(rf.log) >=index{
 		fmt.Printf("Raft:%d Add Log ByIndex:%d,value:%v\n",rf.me, index, log)
@@ -430,8 +434,8 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 				oldCommitIndex := rf.commitIndex
 				rf.commitIndex = min(args.LeaderCommit, rf.GetLastLogIndex())
 				for i :=1; i <= rf.commitIndex - oldCommitIndex;i++{
-					msg:=ApplyMsg{oldCommitIndex+i,rf.log[oldCommitIndex+i-1].Value,false,[]byte{}}
-					fmt.Printf("Raft:%d, ApplyMsg:index:%d, command;%v\n", rf.me, oldCommitIndex+i, rf.log[oldCommitIndex+i-1])
+					msg:=ApplyMsg{oldCommitIndex+i,rf.GetLogByIndex(oldCommitIndex+i).Value,false,[]byte{}}
+					fmt.Printf("Raft:%d, ApplyMsg:index:%d, command;%v\n", rf.me, oldCommitIndex+i, rf.GetLogByIndex(oldCommitIndex+i))
 					rf.applyCh <- msg
 				}
 			}
@@ -586,6 +590,9 @@ func SayHello (rf *Raft, peerid int){
 			rf.nextIndex[peerid] = rf.nextIndex[peerid] - 1
 		}
 		fmt.Printf("%v:Raft:%d, DecretPeer:%d, nextIndex:%d\n", time.Now().Unix(), rf.me, peerid, rf.nextIndex[peerid])
+	}else{
+		nextIndex := preLogIndex + len(sendLogs)+1
+		rf.nextIndex[peerid] = nextIndex
 	}
 }
 func HeartBeatGoroutine(rf *Raft){
@@ -604,6 +611,7 @@ func HeartBeatGoroutine(rf *Raft){
 			}
 		}
 	}
+	fmt.Printf("Raft:%d, Endo Say Hello\n", rf.me)
 }
 func (rf *Raft) IamNewLeader() {
 	// Your code here, if desired.
@@ -685,7 +693,7 @@ func NewElection(raft *Raft, term int){
 			rspNum += 1
 			if ( result) {
 				grantedNum += 1
-				if grantedNum > len(raft.peers)/2 {
+				if grantedNum > len(raft.peers)/2 && !raft.IsLeader(){
 					raft.IamNewLeader()
 				}
 			}
