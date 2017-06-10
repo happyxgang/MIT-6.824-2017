@@ -199,9 +199,11 @@ type CommitResult struct{
 	reply RequestAppendLogReply
 }
 func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
+	rf.mu.Lock()
 	rf.AddLocalLog(cmd)
 	logIndex := rf.GetLastLogIndex()
 	logTerm := rf.GetLastLogTerm()
+	rf.mu.Unlock()
 	rspCh := make(chan CommitResult)
 
 	go func(){
@@ -576,6 +578,23 @@ func (rf* Raft)GetSendLog(peerid int)[]LogInfo{
 	}
 	return logs
 }
+
+func (rf *Raft)DecretNextIndex(peerid int) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	index := rf.nextIndex[peerid]
+	if index > len(rf.log){
+		index = len(rf.log)
+	}
+	logTerm := rf.GetLogByIndex(index).Term
+	for  index = index-1; index > 0; index-- {
+		if rf.GetLogByIndex(index).Term != logTerm {
+			break
+		}
+	}
+	rf.nextIndex[peerid] = index+1
+	fmt.Printf("Raft:%d, Set Peer:%d, NextIndex:%d\n", rf.me, peerid, rf.nextIndex[peerid])
+}
 func SayHello (rf *Raft, peerid int){
 	//log := make([]LogInfo,1,1)\
 	p := rf.peers[peerid]
@@ -593,9 +612,8 @@ func SayHello (rf *Raft, peerid int){
 		rf.currentTerm = reply.Term
 	}
 	if !reply.Success {
-
 		if rf.nextIndex[peerid] > 1 {
-			rf.nextIndex[peerid] = rf.nextIndex[peerid] - 1
+			rf.DecretNextIndex(peerid)
 		}
 		fmt.Printf("%v:Raft:%d, DecretPeer:%d, nextIndex:%d\n", time.Now().Unix(), rf.me, peerid, rf.nextIndex[peerid])
 	}else{
