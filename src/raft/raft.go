@@ -68,6 +68,7 @@ type Raft struct {
 	electionTimeOutMs time.Duration
 	currentTerm int
 	voteFor int
+	nextIndexMu sync.Mutex
 	nextIndex []int
 	matchIndex []int
 	role int
@@ -165,31 +166,25 @@ func (rf* Raft)SendAppendLogRpc(i int, req *RequestAppendLog, rsp *RequestAppend
 	ok := rf.peers[i].Call("Raft.RequestAppendLog",req, rsp)
 	return ok
 }
-func (rf *Raft)GetPreLogIndex(index int) int{
-	lastLogIndex := rf.nextIndex[index]-1
-	if lastLogIndex > 0{
-		return lastLogIndex
-	}
-	return 0
-}
+
 func (rf *Raft)SetCommitIndex( value int){
-	rf.mu.Lock()
-	defer rf.mu.Unlock()
+	//rf.mu.Lock()
+	//defer rf.mu.Unlock()
 	if rf.commitIndex < value{
 		rf.commitIndex = value
 	}
 }
-func (rf *Raft)GetPreLogTerm(index int) int{
-	lastSendLogIndex := rf.nextIndex[index]-1
+func (rf *Raft)GetPreLogTermAndIndex(index int) (int, int, int){
+	nextIndex :=  rf.nextIndex[index]
+	lastSendLogIndex := nextIndex -1
 	if lastSendLogIndex > len(rf.log){
 		panic(fmt.Sprintf("Raft:%d, Peer:%d, logLen:%d, index:%d\n",
 		rf.me, index, len(rf.log), lastSendLogIndex))
-
 	}
 	if lastSendLogIndex > 0{
-		return rf.GetLogByIndex(lastSendLogIndex).Term
+		return rf.GetLogByIndex(lastSendLogIndex).Term, lastSendLogIndex,nextIndex
 	}
-	return 0
+	return 0,0,1
 }
 type CommitResult struct{
 	peerid int
@@ -212,15 +207,17 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 				continue
 			}
 			go func(peerid int){
-				sendLogs := rf.GetSendLog(peerid)
-				preLogIndex :=rf.GetPreLogIndex(peerid)
-				prefLogTerm :=rf.GetPreLogTerm(peerid)
+				prefLogTerm,preLogIndex, nextIndex :=rf.GetPreLogTermAndIndex(peerid)
+				sendLogs := rf.GetSendLog(peerid,nextIndex)
 				logNum := len(sendLogs)
 				req := RequestAppendLog{rf.currentTerm,rf.me,preLogIndex,
 					prefLogTerm,rf.GetCommitIndex(), logNum,sendLogs}
 				reply := RequestAppendLogReply{}
-			 	ok :=rf.SendAppendLogRpc(peerid,&req, &reply)
-				fmt.Printf("Leader:%d, Append Rsp from:%d, logindex:%d, rpcok:%v,result:%v\n",rf.me, peerid,  logIndex, ok,reply)
+			 	oldTerm := rf.currentTerm
+				ok :=rf.SendAppendLogRpc(peerid,&req, &reply)
+				if oldTerm == rf.currentTerm {
+					fmt.Printf("Leader:%d, Append Rsp from:%d, logindex:%d, rpcok:%v,result:%v\n", rf.me, peerid, logIndex, ok, reply)
+				}
 				if ok && reply.Success {
 					rspCh <- CommitResult{peerid, true, preLogIndex, logNum, reply}
 				}else{
@@ -258,15 +255,14 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 					}
 				}else{
 					if rf.nextIndex[ret.peerid] > 1{
-
 						rf.nextIndex[ret.peerid] -=1
 						fmt.Printf("%v, Raft:%d, Decret Peer :%d, nextIndex;%d\n",
 							time.Now().Unix(),rf.me, ret.peerid,rf.nextIndex[ret.peerid])
 					}
 				}
 				if replyNum == len(rf.peers){
-					fmt.Printf("All Rsp Received, raft:%d, isLeader:%v,CommitNum:%d, commit index;%d, new index:%d\n",
-						rf.me, rf.IsLeader(), commitNum, rf.commitIndex, logIndex)
+					fmt.Printf("All Rsp Received, raft:%d, isLeader:%v,commit index;%d, new index:%d.Commit Peer Num:%d,\n",
+						rf.me, rf.IsLeader(),  rf.commitIndex, logIndex, commitNum)
 					break End
 				}
 			}
@@ -403,7 +399,7 @@ func (rf *Raft)AddLog(index int, term int, log LogInfo){
 		rf.AddLog(index, term, log)
 	}
 	if rf.ContainLog(index, term){
-		fmt.Printf("Raft:%d, Alread Contain　Log:Index:%d, term:%d\n", rf.me, index, term)
+		//fmt.Printf("Raft:%d, Alread Contain　Log:Index:%d, term:%d\n", rf.me, index, term)
 		return
 	}
 	if len(rf.log) >=index{
@@ -439,8 +435,9 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 				logTerm := args.AppendLog[index].Term
 				rf.AddLog(logIndex, logTerm, args.AppendLog[index])
 			}
-			if args.LeaderCommit > rf.commitIndex {
-				oldCommitIndex := rf.commitIndex
+			raftCommitIndex := rf.commitIndex
+			if args.LeaderCommit > raftCommitIndex{
+				oldCommitIndex := raftCommitIndex
 				newIndex := min(args.LeaderCommit, rf.GetLastLogIndex())
 				rf.SetCommitIndex(newIndex)
 				for i :=1; i <= newIndex - oldCommitIndex;i++{
@@ -562,17 +559,25 @@ func (rf *Raft)GetLogByIndex(index int)LogInfo{
 	if len(rf.log)  < index {
 		panic(fmt.Sprintf("raft:%d, index outofrange len:%d, index:%d\n", rf.me, len(rf.log), index))
 	}
+	if index <= 0{
+		panic(fmt.Sprintf("Raft:%d, Index Value:%d\n", rf.me, index))
+	}
 	return rf.log[index-1]
 }
-func (rf* Raft)GetSendLog(peerid int)[]LogInfo{
-	logNum := rf.GetLastLogIndex() - rf.nextIndex[peerid] + 1
+func (rf* Raft)GetSendLog(peerid int, peerNextIndex int)[]LogInfo{
+	lastLogIndex := rf.GetLastLogIndex()
+
+	logNum := lastLogIndex - peerNextIndex + 1
+	if logNum <= 0 {
+		return  make([]LogInfo, 0,0)
+	}
+
 	logs := make([]LogInfo, logNum,logNum)
-	nextIndex := rf.nextIndex[peerid]
 
 	if( logNum > 0){
 		for i := 0; i< logNum; i++{
 			//fmt.Printf("Raft:%d, SendTo:%d, index:%d\n", rf.me, peerid, nextIndex+i)
-			log := rf.GetLogByIndex(nextIndex+i)
+			log := rf.GetLogByIndex(peerNextIndex+i)
 			logs[i] = log
 		}
 	}
@@ -598,9 +603,8 @@ func (rf *Raft)DecretNextIndex(peerid int) {
 func SayHello (rf *Raft, peerid int){
 	//log := make([]LogInfo,1,1)\
 	p := rf.peers[peerid]
-	preLogIndex :=rf.GetPreLogIndex(peerid)
-	prefLogTerm :=rf.GetPreLogTerm(peerid)
-	sendLogs := rf.GetSendLog(peerid)
+	prefLogTerm,preLogIndex,nextIndex :=rf.GetPreLogTermAndIndex(peerid)
+	sendLogs := rf.GetSendLog(peerid, nextIndex)
 	req := RequestAppendLog{rf.currentTerm,rf.me,
 		preLogIndex,prefLogTerm,
 		rf.commitIndex,len(sendLogs),sendLogs}
@@ -637,13 +641,18 @@ func HeartBeatGoroutine(rf *Raft){
 			}
 		}
 	}
-	fmt.Printf("Raft:%d, Endo Say Hello\n", rf.me)
+	fmt.Printf("Raft:%d, End  Say Hello\n", rf.me)
 }
 func (rf *Raft) IamNewLeader() {
 	// Your code here, if desired.
 	//rf.ResetElectionTimeOut()
 	rf.ChangeToLeader()
 	go HeartBeatGoroutine(rf)
+}
+func (rf *Raft)SetNextIndex(peerid int, num int){
+	rf.nextIndexMu.Lock()
+	defer rf.nextIndexMu.Unlock()
+	rf.nextIndex[peerid] = num
 }
 func (rf *Raft)ChangeToLeader(){
 	if ! rf.IsLeader() {
@@ -652,7 +661,7 @@ func (rf *Raft)ChangeToLeader(){
 		defer rf.mu.Unlock()
 		rf.role = ROLE_LEADER
 		for i,_ := range rf.nextIndex{
-			rf.nextIndex[i] = rf.GetLastLogIndex()+1
+			rf.SetNextIndex(i, rf.GetLastLogIndex()+1)
 		}
 		rf.matchIndex = make([]int,len(rf.peers))
 
