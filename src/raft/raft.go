@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"math/rand"
 
+	"bytes"
+	"encoding/gob"
 )
 
 // import "bytes"
@@ -69,6 +71,7 @@ type Raft struct {
 	currentTerm int
 	voteFor int
 	nextIndexMu sync.Mutex
+	lastApplied int
 	nextIndex []int
 	matchIndex []int
 	role int
@@ -109,12 +112,14 @@ func (rf *Raft)GetLastLogTerm()int{
 func (rf *Raft) persist() {
 	// Your code here (2C).
 	// Example:
-	// w := new(bytes.Buffer)
-	// e := gob.NewEncoder(w)
-	// e.Encode(rf.xxx)
-	// e.Encode(rf.yyy)
-	// data := w.Bytes()
-	// rf.persister.SaveRaftState(data)
+	w := new(bytes.Buffer)
+	e := gob.NewEncoder(w)
+	e.Encode(rf.currentTerm)
+	e.Encode(rf.voteFor)
+	e.Encode(rf.log)
+	e.Encode(rf.lastApplied)
+	data := w.Bytes()
+	rf.persister.SaveRaftState(data)
 }
 
 //
@@ -123,13 +128,16 @@ func (rf *Raft) persist() {
 func (rf *Raft) readPersist(data []byte) {
 	// Your code here (2C).
 	// Example:
-	// r := bytes.NewBuffer(data)
-	// d := gob.NewDecoder(r)
-	// d.Decode(&rf.xxx)
-	// d.Decode(&rf.yyy)
+	 r := bytes.NewBuffer(data)
+	d := gob.NewDecoder(r)
+	d.Decode(&rf.currentTerm)
+	d.Decode(&rf.voteFor)
+	d.Decode(&rf.log)
+	d.Decode(&rf.lastApplied)
 	if data == nil || len(data) < 1 { // bootstrap without any state?
 		return
 	}
+	fmt.Printf("Raft:%d, currentTerm:%d, voteFor:%d, lastApplied:%d\n", rf.me, rf.currentTerm, rf.voteFor, rf.lastApplied)
 }
 func (rf *Raft)IncTerm()int{
 	rf.mu.Lock()
@@ -251,6 +259,14 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 							msg.Command = rf.GetLogByIndex(commitIndex).Value
 							msg.Index = commitIndex
 							rf.applyCh <- msg
+							rf.mu.Lock()
+							if rf.lastApplied < commitIndex {
+								rf.lastApplied = commitIndex
+								rf.persist()
+							}else{
+								panic(fmt.Sprintf("Raft:%d, LastApplied:%d, commitIndex:%d\n", rf.me, rf.lastApplied, commitIndex))
+							}
+							rf.mu.Unlock()
 						}
 					}
 				}else{
@@ -409,6 +425,7 @@ func (rf *Raft)AddLog(index int, term int, log LogInfo){
 		fmt.Printf("Raft:%d Add Log By Append, Index:%d, value:%v\n",rf.me,index, log)
 		rf.log=append(rf.log,log)
 	}
+	rf.persist()
 }
 func min (a int, b int)int{
 	if a < b {
@@ -795,7 +812,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.commitReplyCh = make(chan ApplyMsg)
 	rf.SetCommitIndex(0)
 	rf.nextIndex = make([]int,len(rf.peers))
-
+	rf.lastApplied = 0
 	// Your initialization code here (2A, 2B, 2C).
 	go HandleElectionTime(rf)
 	go SendApplyMsg(rf)
