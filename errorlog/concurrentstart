@@ -1,3 +1,7 @@
+GOROOT=D:\Go
+GOPATH=E:/mit/src;E:/mit
+D:\Go\bin\go.exe test -c -i -o C:\Users\laughxing\AppData\Local\Temp\TestConcurrentStarts2B_in_test_test_gogo raft
+"D:\Software\Gogland 171.4424.55\bin\runnerw.exe" C:\Users\laughxing\AppData\Local\Temp\TestConcurrentStarts2B_in_test_test_gogo -test.v -test.run ^TestConcurrentStarts2B$
 disconnect(0)
 disconnect(1)
 disconnect(2)
@@ -5,555 +9,106 @@ connect(0)
 connect(1)
 connect(2)
 Test (2B): concurrent Start()s ...
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:8, term:5
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-time:1497356337,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:1
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:1
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:1
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:5
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:5
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:1
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:1
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:1
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-1497356337:Raft:2, DecretPeer:0, nextIndex:1
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:5
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:5
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Request Vote Rpc  Raft:4, Ret:false,req:Term:4, Candidate:0, logIndex:1,logTerm:1 reply:{0 false}
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:1
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:1
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:1
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-1497356337:Raft:2, DecretPeer:4, nextIndex:1
-Request Vote Rpc  Raft:3, Ret:false,req:Term:4, Candidate:0, logIndex:1,logTerm:1 reply:{0 false}
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:5
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:5
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:8, term:5
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-time:1497356337,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Request Vote Rpc  Raft:3, Ret:false,req:Term:3, Candidate:4, logIndex:1,logTerm:1 reply:{0 false}
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:1
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:1
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:1
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:2, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:0, Contain Log prevIndex:3, term:5
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-time:1497356337,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356337,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:1
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:1
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:1
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:5
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-1497356338:Raft:2, DecretPeer:0, nextIndex:1
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:1
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:1
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:1
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Request Vote Rpc  Raft:1, Ret:false,req:Term:2, Candidate:0, logIndex:1,logTerm:1 reply:{0 false}
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:5
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:5
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-1497356338: Election Time Out, Raft:0, Start Term:1, Election
+1497356698: Election Time Out, Raft:0, Start Term:1, Election
 Raft:0:Start To Call for Vote Peer:2
 Raft:0:Start To Call for Vote Peer:1
-Raft:1, ReqVoteArg Candidate:0, term:1,log index:0, logterm:0
-me:1, Role:0, voteFor:-1, Term:0, log index:0, log term:0
 Raft:2, ReqVoteArg Candidate:0, term:1,log index:0, logterm:0
-Raft :1, Change To Follower, Term:1, VoteFor:0,
+Raft:1, ReqVoteArg Candidate:0, term:1,log index:0, logterm:0
 me:2, Role:0, voteFor:-1, Term:0, log index:0, log term:0
+me:1, Role:0, voteFor:-1, Term:0, log index:0, log term:0
+Raft :1, Change To Follower, Term:1, VoteFor:0,
 Raft :2, Change To Follower, Term:1, VoteFor:0,
-Request Vote Rpc  Raft:1, Ret:true,req:Term:1, Candidate:0, logIndex:0,logTerm:0 reply:{1 true}
-Raft:0 Is Leader Now!
 Request Vote Rpc  Raft:2, Ret:true,req:Term:1, Candidate:0, logIndex:0,logTerm:0 reply:{1 true}
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:8, term:5
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-time:1497356338,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-1497356338:Raft:2, DecretPeer:0, nextIndex:1
-1497356338:Raft:2, DecretPeer:3, nextIndex:1
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:1
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:1
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:1
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:5
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-1497356338:Raft:2, DecretPeer:4, nextIndex:1
-Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:0, term:0
-Raft:1, AppendLogResult&{1 true}, CommitIndex:0
+Raft:0 Is Leader Now!
+Request Vote Rpc  Raft:1, Ret:true,req:Term:1, Candidate:0, logIndex:0,logTerm:0 reply:{1 true}
 Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
 
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
+time:1497356698,Raft:2, Contain Log prevIndex:0, term:0
+Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
+
+time:1497356698,Raft:1, Contain Log prevIndex:0, term:0
 Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:1
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:1
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:1
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:1
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Request Vote Rpc  Raft:4, Ret:false,req:Term:4, Candidate:3, logIndex:1,logTerm:1 reply:{0 false}
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:5
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-1497356338:Raft:2, DecretPeer:3, nextIndex:1
-Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
+Raft:1, AppendLogResult&{1 true}, CommitIndex:0
 Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
 
+time:1497356699,Raft:1, Contain Log prevIndex:0, term:0
+Raft:1, AppendLogResult&{1 true}, CommitIndex:0
+Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
+
+time:1497356699,Raft:2, Contain Log prevIndex:0, term:0
 Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-time:1497356338,Raft:1, Contain Log prevIndex:0, term:0
-Raft:1, AppendLogResult&{1 true}, CommitIndex:0
-Request Vote Rpc  Raft:2, Ret:false,req:Term:4, Candidate:3, logIndex:1,logTerm:1 reply:{0 false}
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Request Vote Rpc  Raft:4, Ret:false,req:Term:2, Candidate:3, logIndex:1,logTerm:1 reply:{0 false}
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:1
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:1
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:1
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:1
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:5
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
 Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
 
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
-Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:0, term:0
-Raft:1, AppendLogResult&{1 true}, CommitIndex:0
+time:1497356699,Raft:2, Contain Log prevIndex:0, term:0
 Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-Raft:0,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:8, term:5
-Raft:0, AppendLogResult&{5 true}, CommitIndex:8
-Raft:1,comitIndex:8, term:5, AppendLog,leader:2,arg:AppendLogReq Term:5,Leader:2,PreIndex:8,PreTerm:5,LeaderCommit:8,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:8, term:5
-Raft:1, AppendLogResult&{5 true}, CommitIndex:8
-Request Vote Rpc  Raft:1, Ret:false,req:Term:3, Candidate:4, logIndex:1,logTerm:1 reply:{0 false}
-Raft:4,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:1
-Raft:4, AppendLogResult&{1 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:1
-Raft:0, AppendLogResult&{1 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:1
-Raft:2,comitIndex:3, term:1, AppendLog,leader:3,arg:AppendLogReq Term:1,Leader:3,PreIndex:3,PreTerm:1,LeaderCommit:3,LogNum:0
-
-Raft:1, AppendLogResult&{1 true}, CommitIndex:3
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:1
-Raft:2, AppendLogResult&{1 true}, CommitIndex:3
-Raft:4,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:4, Contain Log prevIndex:3, term:5
-Raft:4, AppendLogResult&{7 true}, CommitIndex:3
-Raft:2,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:2, Contain Log prevIndex:3, term:5
-Raft:2, AppendLogResult&{7 true}, CommitIndex:3
-Raft:0,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:0, Contain Log prevIndex:3, term:5
-Raft:0, AppendLogResult&{7 true}, CommitIndex:3
-Raft:1,comitIndex:3, term:7, AppendLog,leader:3,arg:AppendLogReq Term:7,Leader:3,PreIndex:3,PreTerm:5,LeaderCommit:3,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:3, term:5
-Raft:1, AppendLogResult&{7 true}, CommitIndex:3
 Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
 
-time:1497356338,Raft:1, Contain Log prevIndex:0, term:0
+time:1497356699,Raft:1, Contain Log prevIndex:0, term:0
+Raft:1, AppendLogResult&{1 true}, CommitIndex:0
+Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
+
+time:1497356699,Raft:1, Contain Log prevIndex:0, term:0
+Raft:1, AppendLogResult&{1 true}, CommitIndex:0
 Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:0
 
-Raft:1, AppendLogResult&{1 true}, CommitIndex:0
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
+time:1497356699,Raft:2, Contain Log prevIndex:0, term:0
 Raft:2, AppendLogResult&{1 true}, CommitIndex:0
 Raft:0, Start Index:1, Term:1 Value:1
 TestConcurrentStarts2B, Phase0
-Raft:0, Start Index:2, Term:1 Value:104
-Raft:0, Start Index:3, Term:1 Value:101
-Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:3
-
+Raft:0, Start Index:2, Term:1 Value:100
+Raft:0, Start Index:3, Term:1 Value:104
+Raft:0, Start Index:4, Term:1 Value:102
+Raft:0, Start Index:5, Term:1 Value:103
 Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:1
 
-Raft:0, Start Index:4, Term:1 Value:102
-Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:1
-
-time:1497356338,Raft:1, Contain Log prevIndex:0, term:0
-Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:3
-
-Raft:0, Start Index:5, Term:1 Value:100
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
-Raft:2 Add Log By Append, Index:1, value:{1 1}
-Raft:2 Add Log By Append, Index:2, value:{104 1}
-Raft:2 Add Log By Append, Index:3, value:{101 1}
-Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:4
-
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
-Raft:2 Add Log By Append, Index:4, value:{102 1}
-Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:5
-
-time:1497356338,Raft:1, Contain Log prevIndex:0, term:0
-Raft:1 Add Log By Append, Index:1, value:{1 1}
-Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-Raft:1 Add Log By Append, Index:2, value:{104 1}
-Raft:1 Add Log By Append, Index:3, value:{101 1}
-Leader:0, Append Rsp from:2, logindex:4, rpcok:true,result:{1 true}
-Raft:1 Add Log By Append, Index:4, value:{102 1}
-Raft:0, Start Index:6, Term:1 Value:103
+Raft:0, Start Index:6, Term:1 Value:101
+time:1497356699,Raft:2, Contain Log prevIndex:0, term:0
 TestConcurrentStarts2B, Phase1
 TestConcurrentStarts2B, Phase2
-Raft:1 Add Log By Append, Index:5, value:{100 1}
-Raft:1, AppendLogResult&{1 true}, CommitIndex:0
 Raft:2,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:5
 
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
-Raft:2 Add Log By Append, Index:5, value:{100 1}
+time:1497356699,Raft:2, Contain Log prevIndex:0, term:0
+Raft:2 Add Log By Append, Index:1, value:{1 1}
+Raft:2 Add Log By Append, Index:1, value:{1 1}
 Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-Leader:0, Append Rsp from:1, logindex:3, rpcok:true,result:{1 true}
-Raft:0, Commit Log:1,cmd101
+Leader:0, Append Rsp from:2, logindex:1, rpcok:true,result:{1 true}
+Raft:0, Commit Log:1,cmd1
 Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:6
 
-time:1497356338,Raft:1, Contain Log prevIndex:0, term:0
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
-Raft:1 Add Log By Append, Index:6, value:{103 1}
-Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-Raft:1, AppendLogResult&{1 true}, CommitIndex:0
-Leader:0, Append Rsp from:2, logindex:1, rpcok:true,result:{1 true}
-Leader:0, Append Rsp from:1, logindex:2, rpcok:true,result:{1 true}
-Raft:0, Commit Log:2,cmd104
-Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:5,PreTerm:1,LeaderCommit:1,LogNum:1
+time:1497356699,Raft:1, Contain Log prevIndex:0, term:0
+Raft:1 Add Log By Append, Index:1, value:{1 1}
+Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:0,LogNum:6
 
-time:1497356338,Raft:1, Contain Log prevIndex:5, term:1
+time:1497356699,Raft:1, Contain Log prevIndex:0, term:0
+Raft:1 Add Log By Append, Index:2, value:{100 1}
+Raft:1 Add Log By Append, Index:2, value:{100 1}
+Raft:1 Add Log By Append, Index:4, value:{102 1}
+Raft:1 Add Log By Append, Index:4, value:{102 1}
+Raft:1 Add Log By Append, Index:6, value:{101 1}
+Raft:1, AppendLogResult&{1 true}, CommitIndex:0
+Raft:1, AppendLogResult&{1 true}, CommitIndex:0
+Leader:0, Append Rsp from:1, logindex:4, rpcok:true,result:{1 true}
+Raft:0, Commit Log:2,cmd102
+Leader:0, Append Rsp from:1, logindex:3, rpcok:true,result:{1 true}
+Raft:0, Commit Log:3,cmd104
+Raft:1,comitIndex:0, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:0,PreTerm:0,LeaderCommit:1,LogNum:6
+
+time:1497356699,Raft:1, Contain Log prevIndex:0, term:0
+Raft:0, Commit Log:3,cmd102
 Raft:1, ApplyMsg:index:1, command;{1 1}
 Raft:1, AppendLogResult&{1 true}, CommitIndex:1
-Leader:0, Append Rsp from:1, logindex:5, rpcok:true,result:{1 true}
-Leader:0, Append Rsp from:2, logindex:5, rpcok:true,result:{1 true}
-Raft:0, Commit Log:3,cmd100
-Raft:1 Add Log By Append, Index:1, value:{1 1}
-Raft:0, Commit Log:4,cmd100
-Raft:1, AppendLogResult&{1 true}, CommitIndex:1
-Raft:0, Commit Log:5,cmd100
-All Rsp Received, raft:0, isLeader:true,commit index;5, new index:5.Commit Peer Num:3,
-time:1497356338,Raft:2, Contain Log prevIndex:0, term:0
-Raft:2, AppendLogResult&{1 true}, CommitIndex:0
-Raft:1,comitIndex:1, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:6,PreTerm:1,LeaderCommit:2,LogNum:0
-
-time:1497356338,Raft:1, Contain Log prevIndex:6, term:1
+Raft:0, Commit Log:4,cmd102
 Leader:0, Append Rsp from:1, logindex:1, rpcok:true,result:{1 true}
-Raft:1, ApplyMsg:index:2, command;{104 1}
-All Rsp Received, raft:0, isLeader:true,commit index;5, new index:1.Commit Peer Num:3,
-Raft:1, AppendLogResult&{1 true}, CommitIndex:2
-Raft:1,comitIndex:1, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:5,PreTerm:1,LeaderCommit:1,LogNum:1
+All Rsp Received, raft:0, isLeader:true,commit index;4, new index:1.Commit Peer Num:3,
+Raft:1,comitIndex:1, term:1, AppendLog,leader:0,arg:AppendLogReq Term:1,Leader:0,PreIndex:6,PreTerm:1,LeaderCommit:3,LogNum:0
 
-time:1497356338,Raft:1, Contain Log prevIndex:5, term:1
-Raft:1, AppendLogResult&{1 true}, CommitIndex:2
-Leader:0, Append Rsp from:1, logindex:4, rpcok:true,result:{1 true}
-Leader:0, Append Rsp from:2, logindex:2, rpcok:true,result:{1 true}
-All Rsp Received, raft:0, isLeader:true,commit index;5, new index:2.Commit Peer Num:3,
-Raft:0, Commit Log:1,cmd102
-panic: Raft:0, LastApplied:5, commitIndex:1
+time:1497356699,Raft:1, Contain Log prevIndex:6, term:1
+Raft:1, ApplyMsg:index:2, command;{100 1}
+panic: Raft:0, LastApplied:4, commitIndex:3
 
 
-goroutine 2902 [running]:
-raft.(*Raft).CommitLog.func1(0xc042158cc0, 0x4, 0xc042710540, 0x5aa360, 0xc042522df8)
+goroutine 83 [running]:
+raft.(*Raft).CommitLog.func1(0xc042086240, 0x3, 0xc04215fc20, 0x5aa360, 0xc042190068)
 	E:/mit/src/raft/raft.go:267 +0x72b
 created by raft.(*Raft).CommitLog
 	E:/mit/src/raft/raft.go:286 +0x174
