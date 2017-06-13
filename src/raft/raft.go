@@ -252,15 +252,16 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 					if (commitNum > len(rf.peers)/2 && rf.IsLeader()&&oldIndex < logIndex){
 						logNum := logIndex - oldIndex
 						for i := 1; i <= logNum; i++ {
-							commitIndex := oldIndex+i
-							fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me, commitIndex, cmd)
-							rf.SetCommitIndex(commitIndex)
-							msg := ApplyMsg{}
-							msg.Command = rf.GetLogByIndex(commitIndex).Value
-							msg.Index = commitIndex
-							rf.applyCh <- msg
 							rf.mu.Lock()
+							commitIndex := oldIndex+i
 							if rf.lastApplied < commitIndex {
+								fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me, commitIndex, cmd)
+								rf.SetCommitIndex(commitIndex)
+								msg := ApplyMsg{}
+								msg.Command = rf.GetLogByIndex(commitIndex).Value
+								msg.Index = commitIndex
+								rf.applyCh <- msg
+
 								rf.lastApplied = commitIndex
 								rf.persist()
 							}else{
