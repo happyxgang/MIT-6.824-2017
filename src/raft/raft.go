@@ -265,7 +265,7 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 								rf.lastApplied = commitIndex
 								rf.persist()
 							}else{
-								panic(fmt.Sprintf("Raft:%d, LastApplied:%d, commitIndex:%d\n", rf.me, rf.lastApplied, commitIndex))
+								//panic(fmt.Sprintf("Raft:%d, LastApplied:%d, commitIndex:%d\n", rf.me, rf.lastApplied, commitIndex))
 							}
 							rf.mu.Unlock()
 						}
