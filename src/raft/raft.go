@@ -79,10 +79,12 @@ type Raft struct {
 	applyCh chan ApplyMsg
 	commitReplyCh chan ApplyMsg
 	commitIndex int
+	haveLogApplied bool
 }
 func (rf *Raft)String()string{
-	return fmt.Sprintf("RaftState:currentTerm:%d, voteFor:%d,Role:%d,commitIndex:%d\n",
-	rf.currentTerm, rf.voteFor, rf.role, rf.commitIndex)
+	return fmt.Sprintf("RaftState: Raft:%d, currentTerm:%d,isLeader:%v, voteFor:%d,Role:%d,commitIndex:%d, apply:%d\n" +
+		"log:len:%d, lastIndex:%d, lastTerm:%d\n",
+	rf.me, rf.currentTerm,rf.IsLeader(), rf.voteFor, rf.role, rf.commitIndex, rf.lastApplied, len(rf.log), rf.GetLastLogIndex(), rf.GetLastLogTerm())
 }
 // return currentTerm and whether this server
 // believes it is the leader.
@@ -165,7 +167,10 @@ func (rf *Raft)GetLastIndexLog(count int) *LogInfo{
 }
 
 func (rf* Raft)AddLocalLog(cmd interface{}){
+	//rf.mu.Lock()
 	rf.log = append(rf.log, LogInfo{cmd, rf.currentTerm})
+	fmt.Printf("Raft:%d, Add Log, len:%d\n", rf.me, len(rf.log))
+	//rf.mu.Unlock()
 }
 func (rf* Raft)GetCommitIndex()int{
 	return rf.commitIndex
@@ -216,7 +221,7 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 			}
 			go func(peerid int){
 				prefLogTerm,preLogIndex, nextIndex :=rf.GetPreLogTermAndIndex(peerid)
-				sendLogs := rf.GetSendLog(peerid,nextIndex)
+				sendLogs := rf.GetSendLog(peerid,nextIndex,true)
 				logNum := len(sendLogs)
 				req := RequestAppendLog{rf.currentTerm,rf.me,preLogIndex,
 					prefLogTerm,rf.GetCommitIndex(), logNum,sendLogs}
@@ -224,7 +229,7 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 			 	oldTerm := rf.currentTerm
 				ok :=rf.SendAppendLogRpc(peerid,&req, &reply)
 				if oldTerm == rf.currentTerm {
-					fmt.Printf("Leader:%d, Append Rsp from:%d, logindex:%d, rpcok:%v,result:%v\n", rf.me, peerid, logIndex, ok, reply)
+					fmt.Printf("Leader:%d, Append Rsp from:%d, logindex:%d, rpcok:%v,result:%v,preIndex:%d, logNum:%d\n", rf.me, peerid, logIndex, ok, reply,preLogIndex, logNum)
 				}
 				if ok && reply.Success {
 					rspCh <- CommitResult{peerid, true, preLogIndex, logNum, reply}
@@ -253,9 +258,12 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 						logNum := logIndex - oldIndex
 						for i := 1; i <= logNum; i++ {
 							rf.mu.Lock()
+							if !rf.haveLogApplied {
+								rf.haveLogApplied = true
+							}
 							commitIndex := oldIndex+i
 							if rf.lastApplied < commitIndex {
-								fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me, commitIndex, cmd)
+								fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me, commitIndex, rf.GetLogByIndex(commitIndex).Value)
 								rf.SetCommitIndex(commitIndex)
 								msg := ApplyMsg{}
 								msg.Command = rf.GetLogByIndex(commitIndex).Value
@@ -407,16 +415,18 @@ func (rf *Raft)ConflictLog(index int, term int) bool{
 }
 func (rf *Raft)ElimitConflict(index int){
 	endIndex := index-1
-	rf.log = rf.log[:endIndex]
+	if endIndex < len(rf.log) {
+		rf.log = rf.log[:endIndex]
+	}
 }
-func (rf *Raft)AddLog(index int, term int, log LogInfo){
+func (rf *Raft)AddLog(index int, term int, log LogInfo, lock bool){
 	if rf.ConflictLog(index, term) {
 		fmt.Printf("Raft:%d,Have Conflict,index:%d, term:%d,value:%v\n",rf.me, index, term, log)
 		rf.ElimitConflict(index)
-		rf.AddLog(index, term, log)
+		rf.AddLog(index, term, log, false)
 	}
 	if rf.ContainLog(index, term){
-		//fmt.Printf("Raft:%d, Alread Contain　Log:Index:%d, term:%d\n", rf.me, index, term)
+		fmt.Printf("Raft:%d, Alread Contain　Log:Index:%d, term:%d\n", rf.me, index, term)
 		return
 	}
 	if len(rf.log) >=index{
@@ -451,7 +461,9 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 			for index :=0; index < args.LogNum; index++{
 				logIndex := args.PrevLogIndex+index+1
 				logTerm := args.AppendLog[index].Term
-				rf.AddLog(logIndex, logTerm, args.AppendLog[index])
+				rf.mu.Lock()
+				rf.AddLog(logIndex, logTerm, args.AppendLog[index], true)
+				rf.mu.Unlock()
 			}
 			raftCommitIndex := rf.commitIndex
 			if args.LeaderCommit > raftCommitIndex{
@@ -465,6 +477,7 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 				}
 			}
 		}else {
+			rf.ElimitConflict(args.PrevLogIndex)
 			fmt.Printf("Raft:%d, no preLog prevIndex:%d, term:%d\n",rf.me, args.PrevLogIndex,args.PrevLogTerm)
 			reply.Success = false
 		}
@@ -582,9 +595,11 @@ func (rf *Raft)GetLogByIndex(index int)LogInfo{
 	}
 	return rf.log[index-1]
 }
-func (rf* Raft)GetSendLog(peerid int, peerNextIndex int)[]LogInfo{
+func (rf* Raft)GetSendLog(peerid int, peerNextIndex int, commit bool)[]LogInfo{
 	lastLogIndex := rf.GetLastLogIndex()
-
+	if  !rf.haveLogApplied && ! commit{
+		//lastLogIndex = rf.lastApplied
+	}
 	logNum := lastLogIndex - peerNextIndex + 1
 	if logNum <= 0 {
 		return  make([]LogInfo, 0,0)
@@ -593,11 +608,13 @@ func (rf* Raft)GetSendLog(peerid int, peerNextIndex int)[]LogInfo{
 	logs := make([]LogInfo, logNum,logNum)
 
 	if( logNum > 0){
+		//fmt.Printf("Raft:%d, SendTo:%d, Start\n", rf.me, peerid)
 		for i := 0; i< logNum; i++{
-			//fmt.Printf("Raft:%d, SendTo:%d, index:%d\n", rf.me, peerid, nextIndex+i)
+			//fmt.Printf("Raft:%d, SendTo:%d, index:%d,len:%d\n", rf.me, peerid, peerNextIndex+i, len(rf.log))
 			log := rf.GetLogByIndex(peerNextIndex+i)
 			logs[i] = log
 		}
+		//fmt.Printf("Raft:%d, SendTo:%d, End\n", rf.me, peerid)
 	}
 	return logs
 }
@@ -622,7 +639,7 @@ func SayHello (rf *Raft, peerid int){
 	//log := make([]LogInfo,1,1)\
 	p := rf.peers[peerid]
 	prefLogTerm,preLogIndex,nextIndex :=rf.GetPreLogTermAndIndex(peerid)
-	sendLogs := rf.GetSendLog(peerid, nextIndex)
+	sendLogs := rf.GetSendLog(peerid, nextIndex, false)
 	req := RequestAppendLog{rf.currentTerm,rf.me,
 		preLogIndex,prefLogTerm,
 		rf.commitIndex,len(sendLogs),sendLogs}
@@ -664,6 +681,7 @@ func HeartBeatGoroutine(rf *Raft){
 func (rf *Raft) IamNewLeader() {
 	// Your code here, if desired.
 	//rf.ResetElectionTimeOut()
+
 	rf.ChangeToLeader()
 	go HeartBeatGoroutine(rf)
 }
@@ -678,6 +696,7 @@ func (rf *Raft)ChangeToLeader(){
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
 		rf.role = ROLE_LEADER
+		rf.haveLogApplied = false
 		for i,_ := range rf.nextIndex{
 			rf.SetNextIndex(i, rf.GetLastLogIndex()+1)
 		}
@@ -814,6 +833,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.SetCommitIndex(0)
 	rf.nextIndex = make([]int,len(rf.peers))
 	rf.lastApplied = 0
+	rf.haveLogApplied = false
 	// Your initialization code here (2A, 2B, 2C).
 	go HandleElectionTime(rf)
 	go SendApplyMsg(rf)

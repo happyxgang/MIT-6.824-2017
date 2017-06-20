@@ -641,7 +641,11 @@ func TestPersist32C(t *testing.T) {
 
 	fmt.Printf("  ... Passed\n")
 }
-
+func (conf *config) PrintRaft(){
+	for _, r := range conf.rafts {
+		fmt.Println(r)
+	}
+}
 //
 // Test the scenarios described in Figure 8 of the extended Raft paper. Each
 // iteration asks a leader, if there is one, to insert a command in the Raft
@@ -694,6 +698,7 @@ func TestFigure82C(t *testing.T) {
 				nup += 1
 			}
 		}
+		fmt.Printf("Phase:%d\n", iters)
 	}
 
 	for i := 0; i < servers; i++ {
@@ -702,7 +707,8 @@ func TestFigure82C(t *testing.T) {
 			cfg.connect(i)
 		}
 	}
-
+	cfg.PrintRaft()
+	fmt.Printf("FinalPhase\n")
 	cfg.one(rand.Int(), servers)
 
 	fmt.Printf("  ... Passed\n")
