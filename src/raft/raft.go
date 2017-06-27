@@ -80,6 +80,7 @@ type Raft struct {
 	commitReplyCh chan ApplyMsg
 	commitIndex int
 	haveLogApplied bool
+	killed bool
 }
 func (rf *Raft)String()string{
 	return fmt.Sprintf("RaftState: Raft:%d, currentTerm:%d,isLeader:%v, voteFor:%d,Role:%d,commitIndex:%d, apply:%d\n" +
@@ -578,6 +579,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 //
 func (rf *Raft) Kill() {
 	// Your code here, if desired.
+	rf.killed = true
 }
 func (rf *Raft) SelectFailed(term int) {
 	// Your code here, if desired.
@@ -623,7 +625,7 @@ func (rf *Raft)DecretNextIndex(peerid int) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	index := rf.nextIndex[peerid]
-	if index > len(rf.log){
+/*	if index > len(rf.log){
 		index = len(rf.log)
 	}
 	logTerm := rf.GetLogByIndex(index).Term
@@ -631,8 +633,13 @@ func (rf *Raft)DecretNextIndex(peerid int) {
 		if rf.GetLogByIndex(index).Term != logTerm {
 			break
 		}
+	}*/
+	if index > 1 {
+		rf.nextIndex[peerid] = index -1
+	}else{
+		rf.nextIndex[peerid] = 1
 	}
-	rf.nextIndex[peerid] = index+1
+
 	fmt.Printf("Raft:%d, Set Peer:%d, NextIndex:%d\n", rf.me, peerid, rf.nextIndex[peerid])
 }
 func SayHello (rf *Raft, peerid int){
@@ -646,6 +653,9 @@ func SayHello (rf *Raft, peerid int){
 
 	reply := RequestAppendLogReply{}
 	p.Call("Raft.RequestAppendLog",&req,  &reply)
+	if rf.killed {
+		return
+	}
 	if reply.Term > rf.currentTerm{
 		rf.ChangeToFollower()
 		rf.currentTerm = reply.Term
@@ -668,6 +678,9 @@ func HeartBeatGoroutine(rf *Raft){
 		case <-tick:
 			for i, _ := range rf.peers {
 				if !rf.IsLeader(){
+					break End
+				}
+				if rf.killed {
 					break End
 				}
 				if i != rf.me {
@@ -738,7 +751,10 @@ func NewElection(raft *Raft, term int){
 			req := RequestVoteArgs{term, candidateId, lastLogIndex, lastLogTerm}
 			reply := RequestVoteReply{}
 
-			 suc := raft.sendRequestVote(index, &req, &reply)
+			suc := raft.sendRequestVote(index, &req, &reply)
+			if raft.killed {
+				return
+			}
 			fmt.Printf("Request Vote Rpc  Raft:%d, Ret:%v,req:%v reply:%v\n", index, suc, req, reply)
 			if suc {
 				if reply.Term == term  && reply.VoteGranted {
@@ -763,6 +779,9 @@ func NewElection(raft *Raft, term int){
 		select {
 		case result := <-electChan:
 			rspNum += 1
+			if raft.killed {
+				break ElectResult
+			}
 			if ( result) {
 				grantedNum += 1
 				if grantedNum > len(raft.peers)/2 && !raft.IsLeader(){
@@ -788,6 +807,7 @@ func StartElection(raft *Raft){
 	go NewElection(raft, nowTerm)
 }
 func HandleElectionTime(raft *Raft){
+	End:
 	for {
 		// Just Started Server, Folloer State, Start Election TimeOut
 		gap:=time.Millisecond*10
@@ -796,6 +816,9 @@ func HandleElectionTime(raft *Raft){
 		case <- tick:
 				if raft.IsLeader() {
 					continue
+				}
+				if raft.killed{
+					break End
 				}
 				raft.electionTimeOutMs -= gap
 				// timeout for selection
@@ -834,6 +857,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.nextIndex = make([]int,len(rf.peers))
 	rf.lastApplied = 0
 	rf.haveLogApplied = false
+	rf.killed = false
 	// Your initialization code here (2A, 2B, 2C).
 	go HandleElectionTime(rf)
 	go SendApplyMsg(rf)

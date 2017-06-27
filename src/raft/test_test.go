@@ -698,7 +698,10 @@ func TestFigure82C(t *testing.T) {
 				nup += 1
 			}
 		}
-		fmt.Printf("Phase:%d\n", iters)
+		fmt.Printf("Phase:%d,leader:%d\n", iters,leader)
+		for i,v := range cfg.rafts {
+			fmt.Printf("Raft:%d, %v\n",i, v)
+		}
 	}
 
 	for i := 0; i < servers; i++ {
