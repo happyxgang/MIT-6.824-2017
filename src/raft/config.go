@@ -373,10 +373,16 @@ func (cfg *config) wait(index int, n int, startTerm int) interface{} {
 	}
 	nd, cmd := cfg.nCommitted(index)
 	if nd < n {
+		cfg.printStauts()
 		cfg.t.Fatalf("only %d decided for index %d; wanted %d\n",
 			nd, index, n)
 	}
 	return cmd
+}
+func (config *config) printStauts() {
+	for _, r := range config.rafts {
+		fmt.Printf("%v", r)
+	}
 }
 
 // do a complete agreement.
@@ -428,6 +434,9 @@ func (cfg *config) one(cmd int, expectedServers int) int {
 		} else {
 			time.Sleep(50 * time.Millisecond)
 		}
+	}
+	for _, r := range cfg.rafts {
+		fmt.Printf("%v\n",r)
 	}
 	cfg.t.Fatalf("one(%v) failed to reach agreement", cmd)
 	return -1

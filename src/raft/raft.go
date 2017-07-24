@@ -87,8 +87,9 @@ type Raft struct {
 
 func (rf *Raft)String()string{
 	return fmt.Sprintf("RaftState: Raft:%d, currentTerm:%d,isLeader:%v, voteFor:%d,Role:%d,commitIndex:%d, apply:%d\n" +
-		"log:len:%d, lastIndex:%d, lastTerm:%d\n",
-	rf.me, rf.currentTerm,rf.IsLeader(), rf.voteFor, rf.role, rf.commitIndex, rf.lastApplied, len(rf.log), rf.GetLastLogIndex(), rf.GetLastLogTerm())
+		"log:len:%d, lastIndex:%d, lastTerm:%d, nextindex:%v, matchindex:%v\n",
+	rf.me, rf.currentTerm,rf.IsLeader(), rf.voteFor, rf.role, rf.commitIndex,
+		rf.lastApplied, len(rf.log), rf.GetLastLogIndex(), rf.GetLastLogTerm(), rf.nextIndex, rf.matchIndex)
 }
 // return currentTerm and whether this server
 // believes it is the leader.
@@ -206,6 +207,7 @@ type CommitResult struct{
 func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 	rf.mu.Lock()
 	rf.AddLocalLog(cmd)
+	rf.matchIndex[rf.me]=rf.GetLastLogIndex()
 	logIndex := rf.GetLastLogIndex()
 	logTerm := rf.GetLastLogTerm()
 	rf.mu.Unlock()
@@ -271,12 +273,10 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 					rf.matchIndex[ret.peerid] = ret.preLogIndex+ret.logNum
 					oldIndex := rf.commitIndex
 					//if commitNum > len(rf.peers)/2 && rf.IsLeader()&&oldIndex < logIndex {
-					if rf.haveNewCommitedLog() {
-						logNum := logIndex - oldIndex
+					haveNewCommit, newCommitIndex := rf.haveNewCommitedLog()
+					if haveNewCommit {
+						logNum := newCommitIndex - oldIndex
 						for i := 1; i <= logNum; i++ {
-							//if !rf.haveLogApplied {
-							//	rf.haveLogApplied = true
-							//}
 							commitIndex := oldIndex+i
 							if rf.lastApplied < commitIndex {
 								fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me,
@@ -290,8 +290,6 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 
 								rf.lastApplied = commitIndex
 								rf.persist()
-							}else{
-
 							}
 						}
 					}
@@ -317,8 +315,27 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 	fmt.Printf("Raft:%d, Start Index:%d, Term:%d Value:%v\n", rf.me, logIndex, logTerm,cmd)
 	return logIndex,logTerm
 }
-func (raft *Raft) haveNewCommitedLog() {
-	
+func (rf *Raft) haveNewCommitedLog() (bool, int){
+	oldCommitIndex := rf.commitIndex
+	peerNum := len(rf.peers)
+	newCommitIndex := oldCommitIndex
+	for i := oldCommitIndex+1; i <= rf.GetLastLogIndex(); i++{
+		matchNum := 0
+		for _, matchIndex := range rf.matchIndex {
+			if matchIndex >= i {
+				matchNum++
+			}
+		}
+		if matchNum > peerNum/2 {
+			newCommitIndex = i
+		}else{
+			break
+		}
+	}
+	if newCommitIndex != oldCommitIndex {
+		return true, newCommitIndex
+	}
+	return false,newCommitIndex
 }
 
 //
@@ -349,14 +366,11 @@ type RequestVoteReply struct {
 }
 func (rf *Raft) LogNotNewer(otherTerm int, otherIndex int) bool{
 	myLastLogTerm := rf.GetLastLogTerm()
-	if myLastLogTerm > otherTerm {
-		return false
-	}
 	if myLastLogTerm < otherTerm {
 		return true
 	}
 	myLastLogIndex := rf.GetLastLogIndex()
-	if myLastLogIndex <= otherIndex {
+	if myLastLogTerm == otherTerm &&  myLastLogIndex <= otherIndex {
 		return true
 	}
 	return false
@@ -367,18 +381,17 @@ func (rf *Raft) LogNotNewer(otherTerm int, otherIndex int) bool{
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
 	//fmt.Printf("Raft:%d, Get RequestVote Arg:%v\n", rf.me, args)
-	fmt.Printf("Raft:%d, ReqVoteArg Candidate:%d, term:%d,log index:%d, logterm:%d\n",
+	rf.mu.Lock()
+	fmt.Printf("Raft:%d,Get ReqVote Arg Candidate:%d, term:%d,log index:%d, logterm:%d\n",
 		rf.me, args.CandidateId, args.Term,args.LastLogIndex, args.LastLogTerm)
-	fmt.Printf("me:%d, Role:%d, voteFor:%d, Term:%d, log index:%d, log term:%d\n",
+	fmt.Printf("Raft:%d, Role:%d, voteFor:%d, Term:%d, log index:%d, log term:%d\n",
 		rf.me, rf.role, rf.voteFor, rf.currentTerm, rf.GetLastLogIndex(), rf.GetLastLogTerm())
 	if args.Term < rf.currentTerm {
-		fmt.Printf("Raft:%d, Grant Failed, raft term:%d, arg term%:d\n",rf.me, rf.currentTerm, args.Term)
-		reply.VoteGranted = false
+		fmt.Printf("Raft:%d, Grant Failed, MyTerm:%d, Req:%d\n",rf.me, rf.currentTerm, args.Term)
+		reply.VoteGranted = false;
 	}else if args.Term > rf.currentTerm{
-
 		rf.currentTerm = args.Term
 		rf.ChangeToFollower()
-		rf.ResetElectionTimeOut()
 		if rf.LogNotNewer(args.LastLogTerm, args.LastLogIndex) {
 			rf.VoteFor(args.CandidateId)
 			reply.VoteGranted = true
@@ -387,14 +400,13 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 			reply.VoteGranted = false
 		}
 		fmt.Printf("Raft :%d, Change To Follower, Term:%d, VoteFor:%d, \n", rf.me, rf.currentTerm, rf.voteFor)
-	}else if (rf.voteFor == -1 || rf.voteFor == args.CandidateId) &&
-		(rf.GetLastLogTerm() == args.LastLogTerm && rf.GetLastLogIndex() <= args.LastLogIndex) {
+
+	}else if (rf.voteFor == -1 || rf.voteFor == args.CandidateId) && rf.LogNotNewer(args.LastLogTerm, args.LastLogIndex) {
 			rf.currentTerm = args.Term
 			reply.VoteGranted = true
 			rf.VoteFor(args.CandidateId)
 			rf.ChangeToFollower()
 			fmt.Printf("Raft :%d, Grant To:%d\n", rf.me, args.CandidateId)
-			//rf.ResetElectionTimeOut()
 
 	}else{
 		fmt.Printf("Raft:%d, Grant Failed\n",rf.me)
@@ -402,6 +414,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	}
 
 	reply.Term=rf.currentTerm
+	rf.mu.Unlock()
 }
 type RequestAppendLog struct{
 	Term int
@@ -446,20 +459,20 @@ func (rf *Raft)ElimitConflict(index int){
 		rf.log = rf.log[:endIndex]
 	}
 }
-func (rf *Raft)AddLog(index int, term int, log LogInfo, lock bool){
+func (rf *Raft)AddLog(index int, term int, log LogInfo){
 	if rf.ConflictLog(index, term) {
 		fmt.Printf("Raft:%d,Have Conflict,index:%d, term:%d,value:%v\n",rf.me, index, term, log)
 		rf.ElimitConflict(index)
-		rf.AddLog(index, term, log, false)
+		rf.AddLog(index, term, log)
 	}
-	if rf.ContainLog(index, term){
+	if rf.ContainLog(index, term) {
 		fmt.Printf("Raft:%d, Alread Contain　Log:Index:%d, term:%d\n", rf.me, index, term)
 		return
 	}
-	if len(rf.log) >=index{
+	if len(rf.log) >=index {
 		fmt.Printf("Raft:%d Add Log ByIndex:%d,value:%v\n",rf.me, index, log)
 		rf.log[index-1] = log
-	}else{
+	} else {
 		fmt.Printf("Raft:%d Add Log By Append, Index:%d, value:%v\n",rf.me,index, log)
 		rf.log=append(rf.log,log)
 	}
@@ -472,10 +485,12 @@ func min (a int, b int)int{
 	return b
 }
 func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLogReply) {
+	rf.mu.Lock()
 	fmt.Printf("Raft:%d,comitIndex:%d, term:%d, AppendLog,leader:%d,arg:%v\n",
 		rf.me,rf.commitIndex, rf.currentTerm, rf.voteFor,args)
 
 	if args.Term >= rf.currentTerm && args.LeaderId == rf.voteFor  {
+		rf.ResetElectionTimeOut()
 		if rf.ContainLog(args.PrevLogIndex, args.PrevLogTerm) {
 			fmt.Printf("time:%v,Raft:%d, Contain Log prevIndex:%d, term:%d\n",
 				time.Now().Unix(),rf.me, args.PrevLogIndex,args.PrevLogTerm)
@@ -483,42 +498,44 @@ func (rf *Raft) RequestAppendLog(args *RequestAppendLog, reply *RequestAppendLog
 			reply.Term = args.Term
 			reply.Success = true
 			rf.currentTerm = args.Term
-			// TODO::check when to reset election time
-			rf.ResetElectionTimeOut()
 
 			for index :=0; index < args.LogNum; index++{
 				logIndex := args.PrevLogIndex+index+1
 				logTerm := args.AppendLog[index].Term
-				rf.mu.Lock()
-				rf.AddLog(logIndex, logTerm, args.AppendLog[index], true)
-				rf.mu.Unlock()
+				rf.AddLog(logIndex, logTerm, args.AppendLog[index])
 			}
 			raftCommitIndex := rf.commitIndex
 			if args.LeaderCommit > raftCommitIndex{
 				oldCommitIndex := raftCommitIndex
-				newIndex := min(args.LeaderCommit, rf.GetLastLogIndex())
-				rf.SetCommitIndex(newIndex)
-				for i :=1; i <= newIndex - oldCommitIndex;i++{
+				newCommitIndex := min(args.LeaderCommit, rf.GetLastLogIndex())
+				rf.SetCommitIndex(newCommitIndex)
+				for i :=1; i <= newCommitIndex- oldCommitIndex;i++{
 					msg:=ApplyMsg{oldCommitIndex+i,rf.GetLogByIndex(oldCommitIndex+i).Value,false,[]byte{}}
 					fmt.Printf("Raft:%d, ApplyMsg:index:%d, command;%v\n", rf.me, oldCommitIndex+i, rf.GetLogByIndex(oldCommitIndex+i))
 					rf.applyCh <- msg
 				}
 			}
 		}else {
-			rf.ElimitConflict(args.PrevLogIndex)
+			//rf.ElimitConflict(args.PrevLogIndex)
 			fmt.Printf("Raft:%d, no preLog prevIndex:%d, term:%d\n",rf.me, args.PrevLogIndex,args.PrevLogTerm)
 			reply.Success = false
 		}
 	}else{
-
 		if args.Term > rf.currentTerm {
 			rf.ChangeToFollower()
 			rf.currentTerm = args.Term
+			if rf.IsCandidate() {
+				rf.voteFor = args.LeaderId
+			}else{
+				rf.voteFor = -1
+			}
+			rf.ResetElectionTimeOut()
 		}
 		reply.Term = rf.currentTerm
 		reply.Success = false
 	}
 	fmt.Printf("Raft:%d, AppendLogResult%v, CommitIndex:%d\n",rf.me, reply, rf.commitIndex)
+	rf.mu.Unlock()
 	return
 }
 func (rf *Raft) ChangeToCandidate(){
@@ -687,6 +704,7 @@ func SayHello (rf *Raft, peerid int){
 	if reply.Term > rf.currentTerm{
 		rf.ChangeToFollower()
 		rf.currentTerm = reply.Term
+		rf.voteFor = -1
 	}else if rf.IsLeader(){
 		if !reply.Success {
 			if rf.nextIndex[peerid] > 1 {
@@ -746,6 +764,7 @@ func (rf *Raft)ChangeToLeader(){
 }
 func (rf *Raft)ChangeToFollower(){
 	rf.role = ROLE_FOLLOWER
+	rf.ResetElectionTimeOut()
 }
 //
 // the service or tester wants to create a Raft server. the ports

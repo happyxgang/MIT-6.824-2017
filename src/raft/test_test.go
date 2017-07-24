@@ -339,7 +339,7 @@ func TestBackup2B(t *testing.T) {
 
 	// put leader and one follower in a partition
 	leader1 := cfg.checkOneLeader()
-	fmt.Printf("TestBackup2B:Phase1, leader:%d\n", leader1)
+	fmt.Printf("TestBackup2B:Phase1, leader1:%d\n", leader1)
 	cfg.disconnect((leader1 + 2) % servers)
 	cfg.disconnect((leader1 + 3) % servers)
 	cfg.disconnect((leader1 + 4) % servers)
@@ -373,7 +373,7 @@ func TestBackup2B(t *testing.T) {
 		other = (leader2 + 1) % servers
 	}
 	cfg.disconnect(other)
-	fmt.Printf("TestBackup2B:Phase2, Leader;%d, other:%d\n", leader2, other)
+	fmt.Printf("TestBackup2B:Phase2, leader1:%d, Leader2;%d, other:%d\n", leader1, leader2, other)
 	// lots more commands that won't commit
 	for i := 0; i < 50; i++ {
 		cfg.rafts[leader2].Start(rand.Int())
@@ -397,7 +397,7 @@ func TestBackup2B(t *testing.T) {
 	fmt.Printf("TestBackup2B:Phase3, End\n")
 	leader3 := cfg.checkOneLeader()
 
-	fmt.Printf("TestBackup2B:Phase3, Leader;%d\n", leader3)
+	fmt.Printf("TestBackup2B:Phase3, leader1:%d, leader2:%d, Leader3;%d\n",leader1, leader2, leader3)
 	// now everyone
 	for i := 0; i < servers; i++ {
 		cfg.connect(i)
@@ -528,7 +528,7 @@ func TestPersist12C(t *testing.T) {
 	fmt.Printf("Test (2C): basic persistence ...\n")
 
 	cfg.one(11, servers)
-
+	fmt.Printf("Persisit12c, Phase1\n")
 	// crash and re-start all
 	for i := 0; i < servers; i++ {
 		cfg.start1(i)
@@ -540,6 +540,7 @@ func TestPersist12C(t *testing.T) {
 
 	cfg.one(12, servers)
 
+	fmt.Printf("Persisit12c, Phase2\n")
 	leader1 := cfg.checkOneLeader()
 	cfg.disconnect(leader1)
 	cfg.start1(leader1)
@@ -547,22 +548,27 @@ func TestPersist12C(t *testing.T) {
 
 	cfg.one(13, servers)
 
+	fmt.Printf("Persisit12c, Phase3\n")
 	leader2 := cfg.checkOneLeader()
 	cfg.disconnect(leader2)
 	cfg.one(14, servers-1)
 	cfg.start1(leader2)
 	cfg.connect(leader2)
 
+	fmt.Printf("Persisit12c, Phase4, leader1:%d, leader2:%d\n", leader1, leader2)
 	cfg.wait(4, servers, -1) // wait for leader2 to join before killing i3
 
+	fmt.Printf("Persisit12c, Phase5\n")
 	i3 := (cfg.checkOneLeader() + 1) % servers
 	cfg.disconnect(i3)
 	cfg.one(15, servers-1)
+	fmt.Printf("Persisit12c, Phase5\n")
 	cfg.start1(i3)
 	cfg.connect(i3)
 
 	cfg.one(16, servers)
 
+	fmt.Printf("Persisit12c, Phase6\n")
 	fmt.Printf("  ... Passed\n")
 }
 
