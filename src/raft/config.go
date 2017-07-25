@@ -383,6 +383,7 @@ func (config *config) printStauts() {
 	for _, r := range config.rafts {
 		fmt.Printf("%v", r)
 	}
+	fmt.Printf("Connect:%v\n", config.connected)
 }
 
 // do a complete agreement.
@@ -435,9 +436,7 @@ func (cfg *config) one(cmd int, expectedServers int) int {
 			time.Sleep(50 * time.Millisecond)
 		}
 	}
-	for _, r := range cfg.rafts {
-		fmt.Printf("%v\n",r)
-	}
+	cfg.printStauts()
 	cfg.t.Fatalf("one(%v) failed to reach agreement", cmd)
 	return -1
 }

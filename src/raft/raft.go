@@ -271,28 +271,7 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 				if ret.result {
 					rf.nextIndex[ret.peerid] = ret.preLogIndex+ret.logNum+1
 					rf.matchIndex[ret.peerid] = ret.preLogIndex+ret.logNum
-					oldIndex := rf.commitIndex
-					//if commitNum > len(rf.peers)/2 && rf.IsLeader()&&oldIndex < logIndex {
-					haveNewCommit, newCommitIndex := rf.haveNewCommitedLog()
-					if haveNewCommit {
-						logNum := newCommitIndex - oldIndex
-						for i := 1; i <= logNum; i++ {
-							commitIndex := oldIndex+i
-							if rf.lastApplied < commitIndex {
-								fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me,
-									commitIndex, rf.GetLogByIndex(commitIndex).Value)
-
-								rf.SetCommitIndex(commitIndex)
-								msg := ApplyMsg{}
-								msg.Command = rf.GetLogByIndex(commitIndex).Value
-								msg.Index = commitIndex
-								rf.applyCh <- msg
-
-								rf.lastApplied = commitIndex
-								rf.persist()
-							}
-						}
-					}
+					rf.HandleCommitIndex()
 				}else{
 					if rf.nextIndex[ret.peerid] > 1{
 						rf.nextIndex[ret.peerid] -=1
@@ -315,15 +294,44 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 	fmt.Printf("Raft:%d, Start Index:%d, Term:%d Value:%v\n", rf.me, logIndex, logTerm,cmd)
 	return logIndex,logTerm
 }
+func (rf *Raft) HandleCommitIndex() {
+	oldIndex := rf.commitIndex
+	//if commitNum > len(rf.peers)/2 && rf.IsLeader()&&oldIndex < logIndex {
+	haveNewCommit, newCommitIndex := rf.haveNewCommitedLog()
+	if haveNewCommit {
+		logNum := newCommitIndex - oldIndex
+		for i := 1; i <= logNum; i++ {
+			commitIndex := oldIndex+i
+			if rf.lastApplied < commitIndex {
+				fmt.Printf("Raft:%d, Commit Log:%d,cmd%d\n", rf.me,
+					commitIndex, rf.GetLogByIndex(commitIndex).Value)
+
+				rf.SetCommitIndex(commitIndex)
+				msg := ApplyMsg{}
+				msg.Command = rf.GetLogByIndex(commitIndex).Value
+				msg.Index = commitIndex
+				rf.applyCh <- msg
+
+				rf.lastApplied = commitIndex
+				rf.persist()
+			}
+		}
+	}
+	rf.commitIndex = newCommitIndex
+}
 func (rf *Raft) haveNewCommitedLog() (bool, int){
 	oldCommitIndex := rf.commitIndex
 	peerNum := len(rf.peers)
 	newCommitIndex := oldCommitIndex
 	for i := oldCommitIndex+1; i <= rf.GetLastLogIndex(); i++{
-		matchNum := 0
-		for _, matchIndex := range rf.matchIndex {
-			if matchIndex >= i {
+		matchNum := 1
+		for index, matchIndex := range rf.matchIndex {
+			if index != rf.me && matchIndex >= i {
 				matchNum++
+				if matchIndex > rf.GetLastLogIndex() {
+					panic(fmt.Sprintf("match index illegal, rf:%d, index:%d, matchIndex:%d, max:%d\n",
+					rf.me, index, matchIndex, rf.GetLastLogIndex()))
+				}
 			}
 		}
 		if matchNum > peerNum/2 {
@@ -715,6 +723,7 @@ func SayHello (rf *Raft, peerid int){
 			nextIndex := preLogIndex + len(sendLogs)+1
 			rf.matchIndex[peerid] = nextIndex - 1
 			rf.nextIndex[peerid] = nextIndex
+			rf.HandleCommitIndex()
 		}
 	}
 	rf.mu.Unlock()

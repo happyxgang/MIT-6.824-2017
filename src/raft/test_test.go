@@ -586,12 +586,13 @@ func TestPersist22C(t *testing.T) {
 
 		leader1 := cfg.checkOneLeader()
 
+		fmt.Printf("Phase1:Iter:%d,leader1:%d\n", iters, leader1)
 		cfg.disconnect((leader1 + 1) % servers)
 		cfg.disconnect((leader1 + 2) % servers)
-		fmt.Printf("Phase1:Iter:%d,leader1:%d\n", iters, leader1)
 		cfg.one(10+index, servers-2)
 		index++
 
+		fmt.Printf("Phase2:Iter:%d,leader1:%d\n", iters, leader1)
 		cfg.disconnect((leader1 + 0) % servers)
 		cfg.disconnect((leader1 + 3) % servers)
 		cfg.disconnect((leader1 + 4) % servers)
@@ -608,7 +609,7 @@ func TestPersist22C(t *testing.T) {
 
 		cfg.one(10+index, servers-2)
 		index++
-		fmt.Printf("Phase2:Iter:%d,leader1:%d\n", iters, leader1)
+		fmt.Printf("Phase3:Iter:%d,leader1:%d\n", iters, leader1)
 		cfg.connect((leader1 + 4) % servers)
 		cfg.connect((leader1 + 0) % servers)
 	}
