@@ -269,8 +269,11 @@ func (rf *Raft)CommitLog(cmd interface{}) (index int, term int){
 
 				replyNum += 1
 				if ret.result {
-					rf.nextIndex[ret.peerid] = ret.preLogIndex+ret.logNum+1
-					rf.matchIndex[ret.peerid] = ret.preLogIndex+ret.logNum
+					if  rf.nextIndex[ret.peerid] < ret.preLogIndex+ret.logNum+1 {
+						rf.nextIndex[ret.peerid] = ret.preLogIndex+ret.logNum+1
+						rf.matchIndex[ret.peerid] = ret.preLogIndex+ret.logNum
+					}
+
 					rf.HandleCommitIndex()
 				}else{
 					if rf.nextIndex[ret.peerid] > 1{
@@ -316,8 +319,8 @@ func (rf *Raft) HandleCommitIndex() {
 				rf.persist()
 			}
 		}
+		rf.commitIndex = newCommitIndex
 	}
-	rf.commitIndex = newCommitIndex
 }
 func (rf *Raft) haveNewCommitedLog() (bool, int){
 	oldCommitIndex := rf.commitIndex
@@ -340,10 +343,10 @@ func (rf *Raft) haveNewCommitedLog() (bool, int){
 			break
 		}
 	}
-	if newCommitIndex != oldCommitIndex {
+	if newCommitIndex != oldCommitIndex{
 		return true, newCommitIndex
 	}
-	return false,newCommitIndex
+	return false,oldCommitIndex
 }
 
 //
